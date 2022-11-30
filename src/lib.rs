@@ -14,7 +14,9 @@ pub struct AppPlugin;
 
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
-        app.add_state(AppState::Game).add_startup_system(setup);
+        app.add_state(AppState::Game)
+            .add_startup_system(setup)
+            .add_system(movement);
     }
 }
 
@@ -47,4 +49,53 @@ fn setup(mut commands: Commands) {
         transform: Transform::from_xyz(0.0, 0.0, 0.0),
         ..default()
     });
+    // human
+    commands.spawn((
+        SpriteBundle {
+            sprite: Sprite {
+                color: palette::LIGHT_PINK,
+                custom_size: Some(Vec2::new(0.7, 1.8)),
+                anchor: Anchor::BottomCenter,
+                ..default()
+            },
+            transform: Transform::from_xyz(-10.0, 0.0, 0.0),
+            ..default()
+        },
+        Creature::new(true),
+    ));
+    // monster
+    commands.spawn((
+        SpriteBundle {
+            sprite: Sprite {
+                color: palette::DARK_BLACK,
+                custom_size: Some(Vec2::new(0.6, 0.8)),
+                anchor: Anchor::BottomCenter,
+                ..default()
+            },
+            transform: Transform::from_xyz(10.0, 0.0, 0.0),
+            ..default()
+        },
+        Creature::new(false),
+    ));
+}
+
+#[derive(Component)]
+struct Creature {
+    is_player: bool,
+}
+
+impl Creature {
+    pub fn new(is_player: bool) -> Self {
+        Self { is_player }
+    }
+}
+
+fn movement(mut query: Query<(&Creature, &mut Transform)>, time: Res<Time>) {
+    for (creature, mut transform) in &mut query {
+        let delta_translation = time.delta_seconds() * 1.0;
+        transform.translation.x += match creature.is_player {
+            true => delta_translation,
+            false => -delta_translation,
+        };
+    }
 }
