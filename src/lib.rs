@@ -4,6 +4,7 @@ use bevy::{
     core_pipeline::clear_color::ClearColorConfig, prelude::*, render::camera::ScalingMode,
     sprite::Anchor,
 };
+use bevy_rapier2d::prelude::*;
 
 const WORLD_HEIGHT: f32 = 12.0;
 const GROUND_HEIGHT: f32 = 6.0;
@@ -16,7 +17,8 @@ impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
         app.add_state(AppState::Game)
             .add_startup_system(setup)
-            .add_system(movement);
+            .add_system(movement)
+            .add_system(collision);
     }
 }
 
@@ -55,14 +57,14 @@ fn setup(mut commands: Commands) {
             sprite: Sprite {
                 color: palette::LIGHT_PINK,
                 custom_size: Some(Vec2::new(0.7, 1.8)),
-                anchor: Anchor::BottomCenter,
                 ..default()
             },
-            transform: Transform::from_xyz(-10.0, 0.0, 0.0),
+            transform: Transform::from_xyz(-10.0, 0.9, 0.0),
             ..default()
         },
         Speed::new(1.0),
         Behaviour::MoveRight,
+        SensorCollider::kinematic(Collider::cuboid(0.35, 0.9)),
     ));
     // monster
     commands.spawn((
@@ -70,14 +72,14 @@ fn setup(mut commands: Commands) {
             sprite: Sprite {
                 color: palette::DARK_BLACK,
                 custom_size: Some(Vec2::new(0.6, 0.8)),
-                anchor: Anchor::BottomCenter,
                 ..default()
             },
-            transform: Transform::from_xyz(10.0, 0.0, 0.0),
+            transform: Transform::from_xyz(10.0, 0.4, 0.0),
             ..default()
         },
         Speed::new(2.0),
         Behaviour::MoveLeft,
+        SensorCollider::kinematic(Collider::cuboid(0.3, 0.4)),
     ));
 }
 
@@ -98,11 +100,44 @@ enum Behaviour {
     MoveLeft,
 }
 
+#[derive(Component)]
+struct Ally;
+
+#[derive(Component)]
+struct Enemy;
+
+#[derive(Bundle)]
+struct SensorCollider {
+    rigid_body: RigidBody,
+    collider: Collider,
+    sensor: Sensor,
+    active_collision_types: ActiveCollisionTypes,
+    active_events: ActiveEvents,
+}
+
+impl SensorCollider {
+    pub fn kinematic(collider: Collider) -> Self {
+        Self {
+            rigid_body: RigidBody::KinematicPositionBased,
+            collider,
+            sensor: Sensor,
+            active_collision_types: ActiveCollisionTypes::KINEMATIC_KINEMATIC,
+            active_events: ActiveEvents::COLLISION_EVENTS,
+        }
+    }
+}
+
 fn movement(mut query: Query<(&mut Transform, &Speed, &Behaviour)>, time: Res<Time>) {
     for (mut transform, speed, behaviour) in &mut query {
         transform.translation.x += match behaviour {
             Behaviour::MoveRight => time.delta_seconds() * speed.value,
             Behaviour::MoveLeft => -time.delta_seconds() * speed.value,
         };
+    }
+}
+
+fn collision(mut event_reader: EventReader<CollisionEvent>) {
+    for collision in event_reader.iter() {
+        println!("Collision: {:?}", collision);
     }
 }

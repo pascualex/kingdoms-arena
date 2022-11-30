@@ -12,3 +12,4 @@ opt-level = 3
 [dependencies]
 bevy = "0.9"
 bevy-inspector-egui = "0.14"
+bevy_rapier2d = { version = "0.19", features = ["debug-render"] }
