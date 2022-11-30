@@ -61,7 +61,8 @@ fn setup(mut commands: Commands) {
             transform: Transform::from_xyz(-10.0, 0.0, 0.0),
             ..default()
         },
-        Creature::new(true),
+        Speed::new(1.0),
+        Behaviour::MoveRight,
     ));
     // monster
     commands.spawn((
@@ -75,27 +76,33 @@ fn setup(mut commands: Commands) {
             transform: Transform::from_xyz(10.0, 0.0, 0.0),
             ..default()
         },
-        Creature::new(false),
+        Speed::new(2.0),
+        Behaviour::MoveLeft,
     ));
 }
 
 #[derive(Component)]
-struct Creature {
-    is_player: bool,
+struct Speed {
+    value: f32,
 }
 
-impl Creature {
-    pub fn new(is_player: bool) -> Self {
-        Self { is_player }
+impl Speed {
+    pub fn new(value: f32) -> Self {
+        Self { value }
     }
 }
 
-fn movement(mut query: Query<(&Creature, &mut Transform)>, time: Res<Time>) {
-    for (creature, mut transform) in &mut query {
-        let delta_translation = time.delta_seconds() * 1.0;
-        transform.translation.x += match creature.is_player {
-            true => delta_translation,
-            false => -delta_translation,
+#[derive(Component)]
+enum Behaviour {
+    MoveRight,
+    MoveLeft,
+}
+
+fn movement(mut query: Query<(&mut Transform, &Speed, &Behaviour)>, time: Res<Time>) {
+    for (mut transform, speed, behaviour) in &mut query {
+        transform.translation.x += match behaviour {
+            Behaviour::MoveRight => time.delta_seconds() * speed.value,
+            Behaviour::MoveLeft => -time.delta_seconds() * speed.value,
         };
     }
 }
