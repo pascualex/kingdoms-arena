@@ -24,7 +24,7 @@ fn setup(mut commands: Commands) {
         SpriteBundle {
             sprite: Sprite {
                 color: Color::rgba(0.2, 0.1, 0.1, 0.5),
-                custom_size: Some(Vec2::new(0.9, 1.6)),
+                custom_size: Some(Vec2::new(1.3, 1.9)),
                 anchor: Anchor::BottomCenter,
                 ..default()
             },
@@ -35,7 +35,7 @@ fn setup(mut commands: Commands) {
         Spawner::new(
             "Human",
             palette::LIGHT_PINK,
-            Vec2::new(0.7, 1.5),
+            Vec2::new(1.1, 1.8),
             1.0,
             Behaviour::MoveRight,
             2.0,
@@ -46,7 +46,7 @@ fn setup(mut commands: Commands) {
         SpriteBundle {
             sprite: Sprite {
                 color: Color::rgba(0.2, 0.1, 0.1, 0.5),
-                custom_size: Some(Vec2::new(0.8, 1.0)),
+                custom_size: Some(Vec2::new(1.2, 1.5)),
                 anchor: Anchor::BottomCenter,
                 ..default()
             },
@@ -57,7 +57,7 @@ fn setup(mut commands: Commands) {
         Spawner::new(
             "Monster",
             palette::DARK_BLACK,
-            Vec2::new(0.6, 0.9),
+            Vec2::new(1.0, 1.4),
             2.0,
             Behaviour::MoveLeft,
             1.0,
