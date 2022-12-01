@@ -2,20 +2,23 @@ use bevy::{prelude::*, sprite::Anchor};
 use bevy_rapier2d::prelude::*;
 
 use crate::{
-    collisions::ColliderBundle,
-    creatures::{Behaviour, Speed},
-    palette,
+    collisions::{intersections_with, ColliderBundle},
+    creatures::{Behaviour, Creature, Speed},
+    palette, Kingdom, WORLD_HEIGHT,
 };
 
 pub struct StructuresPlugin;
 
 impl Plugin for StructuresPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(setup).add_system(spawner);
+        app.add_startup_system(setup)
+            .add_system(spawner)
+            .add_system(trap);
     }
 }
 
 fn setup(mut commands: Commands) {
+    // spawners
     commands.spawn((
         Name::new("Human spawner"),
         SpriteBundle {
@@ -25,9 +28,10 @@ fn setup(mut commands: Commands) {
                 anchor: Anchor::BottomCenter,
                 ..default()
             },
-            transform: Transform::from_xyz(-10.0, 0.0, 0.0),
+            transform: Transform::from_xyz(-15.0, 0.0, 0.0),
             ..default()
         },
+        Kingdom::Human,
         Spawner::new(
             "Human",
             palette::LIGHT_PINK,
@@ -46,17 +50,49 @@ fn setup(mut commands: Commands) {
                 anchor: Anchor::BottomCenter,
                 ..default()
             },
-            transform: Transform::from_xyz(10.0, 0.0, 0.0),
+            transform: Transform::from_xyz(15.0, 0.0, 0.0),
             ..default()
         },
+        Kingdom::Monster,
         Spawner::new(
             "Monster",
             palette::DARK_BLACK,
             Vec2::new(0.6, 0.9),
             2.0,
             Behaviour::MoveLeft,
-            2.0,
+            1.0,
         ),
+    ));
+    // wipeout traps
+    commands.spawn((
+        Name::new("Human wipe out trap"),
+        SpriteBundle {
+            sprite: Sprite {
+                color: Color::rgba(0.1, 0.1, 0.1, 0.1),
+                custom_size: Some(Vec2::new(8.0, WORLD_HEIGHT)),
+                ..default()
+            },
+            transform: Transform::from_xyz(-13.0, WORLD_HEIGHT / 2.0, 0.0),
+            ..default()
+        },
+        ColliderBundle::kinematic(Collider::cuboid(4.0, WORLD_HEIGHT / 2.0)),
+        Kingdom::Human,
+        Trap,
+    ));
+    commands.spawn((
+        Name::new("Monster wipe out trap"),
+        SpriteBundle {
+            sprite: Sprite {
+                color: Color::rgba(0.1, 0.1, 0.1, 0.1),
+                custom_size: Some(Vec2::new(8.0, WORLD_HEIGHT)),
+                ..default()
+            },
+            transform: Transform::from_xyz(13.0, WORLD_HEIGHT / 2.0, 0.0),
+            ..default()
+        },
+        ColliderBundle::kinematic(Collider::cuboid(4.0, WORLD_HEIGHT / 2.0)),
+        Kingdom::Monster,
+        Trap,
     ));
 }
 
@@ -82,8 +118,8 @@ impl Spawner {
     ) -> Self {
         Self {
             name: name.into(),
-            size,
             color,
+            size,
             speed,
             behaviour,
             timer: Timer::from_seconds(interval_seconds, TimerMode::Repeating),
@@ -92,13 +128,20 @@ impl Spawner {
     }
 }
 
-fn spawner(mut query: Query<(&Transform, &mut Spawner)>, time: Res<Time>, mut commands: Commands) {
-    for (transform, mut spawner) in &mut query {
+#[derive(Component)]
+struct Trap;
+
+fn spawner(
+    mut query: Query<(&Transform, &Kingdom, &mut Spawner)>,
+    time: Res<Time>,
+    mut commands: Commands,
+) {
+    for (transform, kingdom, mut spawner) in &mut query {
         spawner.timer.tick(time.delta());
         for _ in 0..spawner.timer.times_finished_this_tick() {
             spawner.spawn_count += 1;
             commands.spawn((
-                Name::new(format!("{}{}", spawner.name, spawner.spawn_count)),
+                Name::new(format!("{} {}", spawner.name, spawner.spawn_count)),
                 SpriteBundle {
                     sprite: Sprite {
                         color: spawner.color,
@@ -110,13 +153,40 @@ fn spawner(mut query: Query<(&Transform, &mut Spawner)>, time: Res<Time>, mut co
                     ),
                     ..default()
                 },
-                Speed::new(spawner.speed),
-                spawner.behaviour.clone(),
                 ColliderBundle::kinematic(Collider::cuboid(
                     spawner.size.x / 2.0,
                     spawner.size.y / 2.0,
                 )),
+                kingdom.clone(),
+                Creature,
+                Speed::new(spawner.speed),
+                spawner.behaviour.clone(),
             ));
+        }
+    }
+}
+
+fn trap(
+    trap_query: Query<(Entity, &Kingdom), With<Trap>>,
+    trigger_query: Query<&Kingdom, With<Creature>>,
+    creature_query: Query<(Entity, &Kingdom), With<Creature>>,
+    context: Res<RapierContext>,
+    mut commands: Commands,
+) {
+    for (trap_entity, trap_kingdom) in &trap_query {
+        for trigger_entity in intersections_with(trap_entity, &context) {
+            let trigger_kingdom = match trigger_query.get(trigger_entity) {
+                Ok(kingdom) => kingdom,
+                Err(_) => continue,
+            };
+            if trigger_kingdom == trap_kingdom {
+                continue;
+            }
+            for (creature_entity, creature_kingdom) in &creature_query {
+                if creature_kingdom == trigger_kingdom {
+                    commands.entity(creature_entity).despawn_recursive();
+                }
+            }
         }
     }
 }
