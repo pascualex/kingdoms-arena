@@ -1,4 +1,5 @@
 mod collisions;
+mod creatures;
 mod palette;
 
 use bevy::{
@@ -6,7 +7,12 @@ use bevy::{
     sprite::Anchor,
 };
 use bevy_rapier2d::prelude::*;
-use collisions::{ColliderBundle, CollisionsPlugin};
+use creatures::CreaturesPlugin;
+
+use self::{
+    collisions::{ColliderBundle, CollisionsPlugin},
+    creatures::{Behaviour, Speed},
+};
 
 const WORLD_HEIGHT: f32 = 12.0;
 const GROUND_HEIGHT: f32 = 6.0;
@@ -18,9 +24,9 @@ pub struct AppPlugin;
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(CollisionsPlugin)
+            .add_plugin(CreaturesPlugin)
             .add_state(AppState::Game)
             .add_startup_system(setup)
-            .add_system(movement)
             .add_system(spawner);
     }
 }
@@ -86,23 +92,6 @@ fn setup(mut commands: Commands) {
 }
 
 #[derive(Component)]
-struct Speed {
-    value: f32,
-}
-
-impl Speed {
-    pub fn new(value: f32) -> Self {
-        Self { value }
-    }
-}
-
-#[derive(Component, Clone)]
-enum Behaviour {
-    MoveRight,
-    MoveLeft,
-}
-
-#[derive(Component)]
 struct Spawner {
     name: String,
     color: Color,
@@ -131,15 +120,6 @@ impl Spawner {
             timer: Timer::from_seconds(interval_seconds, TimerMode::Repeating),
             spawn_count: 0,
         }
-    }
-}
-
-fn movement(mut query: Query<(&mut Transform, &Speed, &Behaviour)>, time: Res<Time>) {
-    for (mut transform, speed, behaviour) in &mut query {
-        transform.translation.x += match behaviour {
-            Behaviour::MoveRight => time.delta_seconds() * speed.value,
-            Behaviour::MoveLeft => -time.delta_seconds() * speed.value,
-        };
     }
 }
 
