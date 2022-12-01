@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, sprite::Anchor};
 use bevy_rapier2d::prelude::*;
 
 use crate::{
@@ -18,11 +18,20 @@ impl Plugin for StructuresPlugin {
 fn setup(mut commands: Commands) {
     commands.spawn((
         Name::new("Human spawner"),
-        TransformBundle::from_transform(Transform::from_xyz(-10.0, 0.0, 0.0)),
+        SpriteBundle {
+            sprite: Sprite {
+                color: Color::rgba(0.2, 0.1, 0.1, 0.5),
+                custom_size: Some(Vec2::new(0.9, 1.6)),
+                anchor: Anchor::BottomCenter,
+                ..default()
+            },
+            transform: Transform::from_xyz(-10.0, 0.0, 0.0),
+            ..default()
+        },
         Spawner::new(
             "Human",
             palette::LIGHT_PINK,
-            Vec2::new(0.7, 1.8),
+            Vec2::new(0.7, 1.5),
             1.0,
             Behaviour::MoveRight,
             2.0,
@@ -30,11 +39,20 @@ fn setup(mut commands: Commands) {
     ));
     commands.spawn((
         Name::new("Monster spawner"),
-        TransformBundle::from_transform(Transform::from_xyz(10.0, 0.0, 0.0)),
+        SpriteBundle {
+            sprite: Sprite {
+                color: Color::rgba(0.2, 0.1, 0.1, 0.5),
+                custom_size: Some(Vec2::new(0.8, 1.0)),
+                anchor: Anchor::BottomCenter,
+                ..default()
+            },
+            transform: Transform::from_xyz(10.0, 0.0, 0.0),
+            ..default()
+        },
         Spawner::new(
             "Monster",
             palette::DARK_BLACK,
-            Vec2::new(0.6, 0.8),
+            Vec2::new(0.6, 0.9),
             2.0,
             Behaviour::MoveLeft,
             2.0,
