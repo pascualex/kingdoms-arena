@@ -12,8 +12,8 @@ pub struct StructuresPlugin;
 impl Plugin for StructuresPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(setup)
-            .add_system(spawner)
-            .add_system(trap);
+            .add_system(tick_spawners)
+            .add_system(check_traps);
     }
 }
 
@@ -120,7 +120,7 @@ impl Spawner {
 #[derive(Component)]
 struct Trap;
 
-fn spawner(
+fn tick_spawners(
     mut query: Query<(&Transform, &Kingdom, &mut Spawner)>,
     time: Res<Time>,
     mut commands: Commands,
@@ -154,7 +154,7 @@ fn spawner(
     }
 }
 
-fn trap(
+fn check_traps(
     trap_query: Query<(Entity, &Kingdom), With<Trap>>,
     trigger_query: Query<&Kingdom, With<Creature>>,
     creature_query: Query<(Entity, &Kingdom), With<Creature>>,
