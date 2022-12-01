@@ -10,8 +10,8 @@ use bevy::{
 
 use self::{creatures::CreaturesPlugin, structures::StructuresPlugin};
 
-const WORLD_HEIGHT: f32 = 12.0;
-const GROUND_HEIGHT: f32 = 6.0;
+const WORLD_HEIGHT: f32 = 14.0;
+const GROUND_HEIGHT: f32 = 7.0;
 const CAMERA_HEIGHT: f32 = (WORLD_HEIGHT - GROUND_HEIGHT) / 2.0;
 const CAMERA_SIZE: f32 = WORLD_HEIGHT + GROUND_HEIGHT;
 
