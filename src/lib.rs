@@ -1,17 +1,15 @@
 mod collisions;
 mod creatures;
 mod palette;
+mod structures;
 
 use bevy::{
     core_pipeline::clear_color::ClearColorConfig, prelude::*, render::camera::ScalingMode,
     sprite::Anchor,
 };
-use bevy_rapier2d::prelude::*;
-use creatures::CreaturesPlugin;
 
 use self::{
-    collisions::{ColliderBundle, CollisionsPlugin},
-    creatures::{Behaviour, Speed},
+    collisions::CollisionsPlugin, creatures::CreaturesPlugin, structures::StructuresPlugin,
 };
 
 const WORLD_HEIGHT: f32 = 12.0;
@@ -24,10 +22,10 @@ pub struct AppPlugin;
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(CollisionsPlugin)
+            .add_plugin(StructuresPlugin)
             .add_plugin(CreaturesPlugin)
             .add_state(AppState::Game)
-            .add_startup_system(setup)
-            .add_system(spawner);
+            .add_startup_system(setup);
     }
 }
 
@@ -37,7 +35,6 @@ enum AppState {
 }
 
 fn setup(mut commands: Commands) {
-    // camera
     commands.spawn(Camera2dBundle {
         camera_2d: Camera2d {
             clear_color: ClearColorConfig::Custom(palette::LIGHT_CYAN),
@@ -49,7 +46,6 @@ fn setup(mut commands: Commands) {
         transform: Transform::from_xyz(0.0, CAMERA_HEIGHT, 0.0),
         ..default()
     });
-    // ground
     commands.spawn((
         Name::new("Ground"),
         SpriteBundle {
@@ -63,91 +59,4 @@ fn setup(mut commands: Commands) {
             ..default()
         },
     ));
-    // human
-    commands.spawn((
-        Name::new("Human spawner"),
-        TransformBundle::from_transform(Transform::from_xyz(-10.0, 0.0, 0.0)),
-        Spawner::new(
-            "Human",
-            palette::LIGHT_PINK,
-            Vec2::new(0.7, 1.8),
-            1.0,
-            Behaviour::MoveRight,
-            2.0,
-        ),
-    ));
-    // monster
-    commands.spawn((
-        Name::new("Monster spawner"),
-        TransformBundle::from_transform(Transform::from_xyz(10.0, 0.0, 0.0)),
-        Spawner::new(
-            "Monster",
-            palette::DARK_BLACK,
-            Vec2::new(0.6, 0.8),
-            2.0,
-            Behaviour::MoveLeft,
-            2.0,
-        ),
-    ));
-}
-
-#[derive(Component)]
-struct Spawner {
-    name: String,
-    color: Color,
-    size: Vec2,
-    speed: f32,
-    behaviour: Behaviour,
-    timer: Timer,
-    spawn_count: u32,
-}
-
-impl Spawner {
-    fn new(
-        name: impl Into<String>,
-        color: Color,
-        size: Vec2,
-        speed: f32,
-        behaviour: Behaviour,
-        interval_seconds: f32,
-    ) -> Self {
-        Self {
-            name: name.into(),
-            size,
-            color,
-            speed,
-            behaviour,
-            timer: Timer::from_seconds(interval_seconds, TimerMode::Repeating),
-            spawn_count: 0,
-        }
-    }
-}
-
-fn spawner(mut query: Query<(&Transform, &mut Spawner)>, time: Res<Time>, mut commands: Commands) {
-    for (transform, mut spawner) in &mut query {
-        spawner.timer.tick(time.delta());
-        for _ in 0..spawner.timer.times_finished_this_tick() {
-            spawner.spawn_count += 1;
-            commands.spawn((
-                Name::new(format!("{}{}", spawner.name, spawner.spawn_count)),
-                SpriteBundle {
-                    sprite: Sprite {
-                        color: spawner.color,
-                        custom_size: Some(spawner.size),
-                        ..default()
-                    },
-                    transform: Transform::from_translation(
-                        transform.translation + Vec3::new(0.0, spawner.size.y / 2.0, 0.0),
-                    ),
-                    ..default()
-                },
-                Speed::new(spawner.speed),
-                spawner.behaviour.clone(),
-                ColliderBundle::kinematic(Collider::cuboid(
-                    spawner.size.x / 2.0,
-                    spawner.size.y / 2.0,
-                )),
-            ));
-        }
-    }
 }
