@@ -30,9 +30,9 @@ impl ColliderBundle {
     }
 }
 
-fn collision(mut collision_events: EventReader<CollisionEvent>, mut commands: Commands) {
-    for collision_event in collision_events.iter() {
-        let (entity_1, entity_2) = match collision_event {
+fn collision(mut events: EventReader<CollisionEvent>, mut commands: Commands) {
+    for event in events.iter() {
+        let (entity_1, entity_2) = match event {
             CollisionEvent::Started(entity_1, entity_2, _) => (*entity_1, *entity_2),
             _ => continue,
         };

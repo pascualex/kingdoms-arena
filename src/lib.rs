@@ -20,7 +20,8 @@ impl Plugin for AppPlugin {
         app.add_plugin(CollisionsPlugin)
             .add_state(AppState::Game)
             .add_startup_system(setup)
-            .add_system(movement);
+            .add_system(movement)
+            .add_system(spawner);
     }
 }
 
@@ -58,35 +59,29 @@ fn setup(mut commands: Commands) {
     ));
     // human
     commands.spawn((
-        Name::new("Human"),
-        SpriteBundle {
-            sprite: Sprite {
-                color: palette::LIGHT_PINK,
-                custom_size: Some(Vec2::new(0.7, 1.8)),
-                ..default()
-            },
-            transform: Transform::from_xyz(-10.0, 0.9, 0.0),
-            ..default()
-        },
-        Speed::new(1.0),
-        Behaviour::MoveRight,
-        ColliderBundle::kinematic(Collider::cuboid(0.35, 0.9)),
+        Name::new("Human spawner"),
+        TransformBundle::from_transform(Transform::from_xyz(-10.0, 0.0, 0.0)),
+        Spawner::new(
+            "Human",
+            palette::LIGHT_PINK,
+            Vec2::new(0.7, 1.8),
+            1.0,
+            Behaviour::MoveRight,
+            2.0,
+        ),
     ));
     // monster
     commands.spawn((
-        Name::new("Monster"),
-        SpriteBundle {
-            sprite: Sprite {
-                color: palette::DARK_BLACK,
-                custom_size: Some(Vec2::new(0.6, 0.8)),
-                ..default()
-            },
-            transform: Transform::from_xyz(10.0, 0.4, 0.0),
-            ..default()
-        },
-        Speed::new(2.0),
-        Behaviour::MoveLeft,
-        ColliderBundle::kinematic(Collider::cuboid(0.3, 0.4)),
+        Name::new("Monster spawner"),
+        TransformBundle::from_transform(Transform::from_xyz(10.0, 0.0, 0.0)),
+        Spawner::new(
+            "Monster",
+            palette::DARK_BLACK,
+            Vec2::new(0.6, 0.8),
+            2.0,
+            Behaviour::MoveLeft,
+            2.0,
+        ),
     ));
 }
 
@@ -101,17 +96,43 @@ impl Speed {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 enum Behaviour {
     MoveRight,
     MoveLeft,
 }
 
 #[derive(Component)]
-struct Ally;
+struct Spawner {
+    name: String,
+    color: Color,
+    size: Vec2,
+    speed: f32,
+    behaviour: Behaviour,
+    timer: Timer,
+    spawn_count: u32,
+}
 
-#[derive(Component)]
-struct Enemy;
+impl Spawner {
+    fn new(
+        name: impl Into<String>,
+        color: Color,
+        size: Vec2,
+        speed: f32,
+        behaviour: Behaviour,
+        interval_seconds: f32,
+    ) -> Self {
+        Self {
+            name: name.into(),
+            size,
+            color,
+            speed,
+            behaviour,
+            timer: Timer::from_seconds(interval_seconds, TimerMode::Repeating),
+            spawn_count: 0,
+        }
+    }
+}
 
 fn movement(mut query: Query<(&mut Transform, &Speed, &Behaviour)>, time: Res<Time>) {
     for (mut transform, speed, behaviour) in &mut query {
@@ -119,5 +140,34 @@ fn movement(mut query: Query<(&mut Transform, &Speed, &Behaviour)>, time: Res<Ti
             Behaviour::MoveRight => time.delta_seconds() * speed.value,
             Behaviour::MoveLeft => -time.delta_seconds() * speed.value,
         };
+    }
+}
+
+fn spawner(mut query: Query<(&Transform, &mut Spawner)>, time: Res<Time>, mut commands: Commands) {
+    for (transform, mut spawner) in &mut query {
+        spawner.timer.tick(time.delta());
+        for _ in 0..spawner.timer.times_finished_this_tick() {
+            spawner.spawn_count += 1;
+            commands.spawn((
+                Name::new(format!("{}{}", spawner.name, spawner.spawn_count)),
+                SpriteBundle {
+                    sprite: Sprite {
+                        color: spawner.color,
+                        custom_size: Some(spawner.size),
+                        ..default()
+                    },
+                    transform: Transform::from_translation(
+                        transform.translation + Vec3::new(0.0, spawner.size.y / 2.0, 0.0),
+                    ),
+                    ..default()
+                },
+                Speed::new(spawner.speed),
+                spawner.behaviour.clone(),
+                ColliderBundle::kinematic(Collider::cuboid(
+                    spawner.size.x / 2.0,
+                    spawner.size.y / 2.0,
+                )),
+            ));
+        }
     }
 }
