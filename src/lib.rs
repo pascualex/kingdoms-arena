@@ -11,6 +11,7 @@ use bevy::{
 use self::{creatures::CreaturesPlugin, structures::StructuresPlugin};
 
 const WORLD_HEIGHT: f32 = 14.0;
+const WORLD_EXTENSION: f32 = 20.0;
 const GROUND_HEIGHT: f32 = 7.0;
 const CAMERA_HEIGHT: f32 = (WORLD_HEIGHT - GROUND_HEIGHT) / 2.0;
 const CAMERA_SIZE: f32 = WORLD_HEIGHT + GROUND_HEIGHT;
@@ -50,7 +51,7 @@ fn setup(mut commands: Commands) {
         SpriteBundle {
             sprite: Sprite {
                 color: palette::DARK_GREEN,
-                custom_size: Some(Vec2::new(100.0, GROUND_HEIGHT)),
+                custom_size: Some(Vec2::new(WORLD_EXTENSION * 2.0, GROUND_HEIGHT)),
                 anchor: Anchor::TopCenter,
                 ..default()
             },
