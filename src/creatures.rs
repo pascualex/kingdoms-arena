@@ -8,9 +8,9 @@ pub struct CreaturesPlugin;
 impl Plugin for CreaturesPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Frontlines>()
-            .add_system(movement)
-            .add_system(attack)
-            .add_system(frontlines);
+            .add_system(move_creatures)
+            .add_system(perform_creature_attacks)
+            .add_system(update_frontlines);
     }
 }
 
@@ -34,7 +34,7 @@ impl Speed {
     }
 }
 
-fn movement(mut query: Query<(&mut Transform, &Kingdom, &Speed)>, time: Res<Time>) {
+fn move_creatures(mut query: Query<(&mut Transform, &Kingdom, &Speed)>, time: Res<Time>) {
     for (mut transform, kingdom, speed) in &mut query {
         transform.translation.x += match kingdom {
             Kingdom::Human => time.delta_seconds() * speed.value,
@@ -43,7 +43,7 @@ fn movement(mut query: Query<(&mut Transform, &Kingdom, &Speed)>, time: Res<Time
     }
 }
 
-fn attack(
+fn perform_creature_attacks(
     attacker_query: Query<(Entity, &Kingdom), With<Creature>>,
     attacked_query: Query<&Kingdom, With<Creature>>,
     context: Res<RapierContext>,
@@ -62,7 +62,7 @@ fn attack(
     }
 }
 
-fn frontlines(
+fn update_frontlines(
     query: Query<(Entity, &Transform, &Kingdom), With<Creature>>,
     mut frontlines: ResMut<Frontlines>,
 ) {
