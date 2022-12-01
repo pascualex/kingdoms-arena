@@ -1,3 +1,4 @@
+mod collisions;
 mod palette;
 
 use bevy::{
@@ -5,6 +6,7 @@ use bevy::{
     sprite::Anchor,
 };
 use bevy_rapier2d::prelude::*;
+use collisions::{ColliderBundle, CollisionsPlugin};
 
 const WORLD_HEIGHT: f32 = 12.0;
 const GROUND_HEIGHT: f32 = 6.0;
@@ -15,10 +17,10 @@ pub struct AppPlugin;
 
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
-        app.add_state(AppState::Game)
+        app.add_plugin(CollisionsPlugin)
+            .add_state(AppState::Game)
             .add_startup_system(setup)
-            .add_system(movement)
-            .add_system(collision);
+            .add_system(movement);
     }
 }
 
@@ -41,18 +43,22 @@ fn setup(mut commands: Commands) {
         ..default()
     });
     // ground
-    commands.spawn(SpriteBundle {
-        sprite: Sprite {
-            color: palette::DARK_GREEN,
-            custom_size: Some(Vec2::new(100.0, GROUND_HEIGHT)),
-            anchor: Anchor::TopCenter,
+    commands.spawn((
+        Name::new("Ground"),
+        SpriteBundle {
+            sprite: Sprite {
+                color: palette::DARK_GREEN,
+                custom_size: Some(Vec2::new(100.0, GROUND_HEIGHT)),
+                anchor: Anchor::TopCenter,
+                ..default()
+            },
+            transform: Transform::from_xyz(0.0, 0.0, 0.0),
             ..default()
         },
-        transform: Transform::from_xyz(0.0, 0.0, 0.0),
-        ..default()
-    });
+    ));
     // human
     commands.spawn((
+        Name::new("Human"),
         SpriteBundle {
             sprite: Sprite {
                 color: palette::LIGHT_PINK,
@@ -64,10 +70,11 @@ fn setup(mut commands: Commands) {
         },
         Speed::new(1.0),
         Behaviour::MoveRight,
-        SensorCollider::kinematic(Collider::cuboid(0.35, 0.9)),
+        ColliderBundle::kinematic(Collider::cuboid(0.35, 0.9)),
     ));
     // monster
     commands.spawn((
+        Name::new("Monster"),
         SpriteBundle {
             sprite: Sprite {
                 color: palette::DARK_BLACK,
@@ -79,7 +86,7 @@ fn setup(mut commands: Commands) {
         },
         Speed::new(2.0),
         Behaviour::MoveLeft,
-        SensorCollider::kinematic(Collider::cuboid(0.3, 0.4)),
+        ColliderBundle::kinematic(Collider::cuboid(0.3, 0.4)),
     ));
 }
 
@@ -106,43 +113,11 @@ struct Ally;
 #[derive(Component)]
 struct Enemy;
 
-#[derive(Bundle)]
-struct SensorCollider {
-    rigid_body: RigidBody,
-    collider: Collider,
-    sensor: Sensor,
-    active_collision_types: ActiveCollisionTypes,
-    active_events: ActiveEvents,
-}
-
-impl SensorCollider {
-    pub fn kinematic(collider: Collider) -> Self {
-        Self {
-            rigid_body: RigidBody::KinematicPositionBased,
-            collider,
-            sensor: Sensor,
-            active_collision_types: ActiveCollisionTypes::KINEMATIC_KINEMATIC,
-            active_events: ActiveEvents::COLLISION_EVENTS,
-        }
-    }
-}
-
 fn movement(mut query: Query<(&mut Transform, &Speed, &Behaviour)>, time: Res<Time>) {
     for (mut transform, speed, behaviour) in &mut query {
         transform.translation.x += match behaviour {
             Behaviour::MoveRight => time.delta_seconds() * speed.value,
             Behaviour::MoveLeft => -time.delta_seconds() * speed.value,
         };
-    }
-}
-
-fn collision(mut collision_events: EventReader<CollisionEvent>, mut commands: Commands) {
-    for collision_event in collision_events.iter() {
-        let (entity_1, entity_2) = match collision_event {
-            CollisionEvent::Started(entity_1, entity_2, _) => (*entity_1, *entity_2),
-            _ => continue,
-        };
-        commands.entity(entity_1).despawn_recursive();
-        commands.entity(entity_2).despawn_recursive();
     }
 }
