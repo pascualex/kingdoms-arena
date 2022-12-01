@@ -1,21 +1,12 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-pub struct CollisionsPlugin;
-
-impl Plugin for CollisionsPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_system(collision);
-    }
-}
-
 #[derive(Bundle)]
 pub struct ColliderBundle {
     rigid_body: RigidBody,
     collider: Collider,
     sensor: Sensor,
     active_collision_types: ActiveCollisionTypes,
-    active_events: ActiveEvents,
 }
 
 impl ColliderBundle {
@@ -25,18 +16,21 @@ impl ColliderBundle {
             collider,
             sensor: Sensor,
             active_collision_types: ActiveCollisionTypes::KINEMATIC_KINEMATIC,
-            active_events: ActiveEvents::COLLISION_EVENTS,
         }
     }
 }
 
-fn collision(mut events: EventReader<CollisionEvent>, mut commands: Commands) {
-    for event in events.iter() {
-        let (entity_1, entity_2) = match event {
-            CollisionEvent::Started(entity_1, entity_2, _) => (*entity_1, *entity_2),
-            _ => continue,
-        };
-        commands.entity(entity_1).despawn_recursive();
-        commands.entity(entity_2).despawn_recursive();
-    }
+pub fn intersections_with(
+    collider: Entity,
+    context: &RapierContext,
+) -> impl Iterator<Item = Entity> + '_ {
+    context
+        .intersections_with(collider)
+        .filter_map(move |(entity_1, entity_2, intersects)| match intersects {
+            true => match entity_1 == collider {
+                true => Some(entity_2),
+                false => Some(entity_1),
+            },
+            false => None,
+        })
 }

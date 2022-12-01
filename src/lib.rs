@@ -8,9 +8,7 @@ use bevy::{
     sprite::Anchor,
 };
 
-use self::{
-    collisions::CollisionsPlugin, creatures::CreaturesPlugin, structures::StructuresPlugin,
-};
+use self::{creatures::CreaturesPlugin, structures::StructuresPlugin};
 
 const WORLD_HEIGHT: f32 = 12.0;
 const GROUND_HEIGHT: f32 = 6.0;
@@ -21,8 +19,7 @@ pub struct AppPlugin;
 
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(CollisionsPlugin)
-            .add_plugin(StructuresPlugin)
+        app.add_plugin(StructuresPlugin)
             .add_plugin(CreaturesPlugin)
             .add_state(AppState::Game)
             .add_startup_system(setup);
@@ -35,6 +32,7 @@ enum AppState {
 }
 
 fn setup(mut commands: Commands) {
+    // camera
     commands.spawn(Camera2dBundle {
         camera_2d: Camera2d {
             clear_color: ClearColorConfig::Custom(palette::LIGHT_CYAN),
@@ -46,6 +44,7 @@ fn setup(mut commands: Commands) {
         transform: Transform::from_xyz(0.0, CAMERA_HEIGHT, 0.0),
         ..default()
     });
+    // background
     commands.spawn((
         Name::new("Ground"),
         SpriteBundle {
@@ -59,4 +58,10 @@ fn setup(mut commands: Commands) {
             ..default()
         },
     ));
+}
+
+#[derive(Component, PartialEq, Eq, Clone)]
+enum Kingdom {
+    Human,
+    Monster,
 }
