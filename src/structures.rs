@@ -3,8 +3,8 @@ use bevy_rapier2d::prelude::*;
 
 use crate::{
     collisions::{intersections_with, ColliderBundle},
-    creatures::{Behaviour, Creature, Speed},
-    palette, Kingdom, WORLD_HEIGHT,
+    creatures::{Creature, Speed},
+    palette, Kingdom, WORLD_EXTENSION, WORLD_HEIGHT,
 };
 
 pub struct StructuresPlugin;
@@ -28,18 +28,11 @@ fn setup(mut commands: Commands) {
                 anchor: Anchor::BottomCenter,
                 ..default()
             },
-            transform: Transform::from_xyz(-15.0, 0.0, 0.0),
+            transform: Transform::from_xyz(-WORLD_EXTENSION + 5.0, 0.0, 0.0),
             ..default()
         },
         Kingdom::Human,
-        Spawner::new(
-            "Human",
-            palette::LIGHT_PINK,
-            Vec2::new(1.1, 1.8),
-            1.0,
-            Behaviour::MoveRight,
-            2.0,
-        ),
+        Spawner::new("Human", palette::LIGHT_PINK, Vec2::new(1.1, 1.8), 1.0, 2.0),
     ));
     commands.spawn((
         Name::new("Monster spawner"),
@@ -50,7 +43,7 @@ fn setup(mut commands: Commands) {
                 anchor: Anchor::BottomCenter,
                 ..default()
             },
-            transform: Transform::from_xyz(15.0, 0.0, 0.0),
+            transform: Transform::from_xyz(WORLD_EXTENSION - 5.0, 0.0, 0.0),
             ..default()
         },
         Kingdom::Monster,
@@ -59,7 +52,6 @@ fn setup(mut commands: Commands) {
             palette::DARK_BLACK,
             Vec2::new(1.0, 1.4),
             2.0,
-            Behaviour::MoveLeft,
             1.0,
         ),
     ));
@@ -69,13 +61,13 @@ fn setup(mut commands: Commands) {
         SpriteBundle {
             sprite: Sprite {
                 color: Color::rgba(0.1, 0.1, 0.1, 0.1),
-                custom_size: Some(Vec2::new(8.0, WORLD_HEIGHT)),
+                custom_size: Some(Vec2::new(10.0, WORLD_HEIGHT)),
                 ..default()
             },
-            transform: Transform::from_xyz(-13.0, WORLD_HEIGHT / 2.0, 0.0),
+            transform: Transform::from_xyz(-WORLD_EXTENSION + 6.0, WORLD_HEIGHT / 2.0, 0.0),
             ..default()
         },
-        ColliderBundle::kinematic(Collider::cuboid(4.0, WORLD_HEIGHT / 2.0)),
+        ColliderBundle::kinematic(Collider::cuboid(5.0, WORLD_HEIGHT / 2.0)),
         Kingdom::Human,
         Trap,
     ));
@@ -84,13 +76,13 @@ fn setup(mut commands: Commands) {
         SpriteBundle {
             sprite: Sprite {
                 color: Color::rgba(0.1, 0.1, 0.1, 0.1),
-                custom_size: Some(Vec2::new(8.0, WORLD_HEIGHT)),
+                custom_size: Some(Vec2::new(10.0, WORLD_HEIGHT)),
                 ..default()
             },
-            transform: Transform::from_xyz(13.0, WORLD_HEIGHT / 2.0, 0.0),
+            transform: Transform::from_xyz(WORLD_EXTENSION - 6.0, WORLD_HEIGHT / 2.0, 0.0),
             ..default()
         },
-        ColliderBundle::kinematic(Collider::cuboid(4.0, WORLD_HEIGHT / 2.0)),
+        ColliderBundle::kinematic(Collider::cuboid(5.0, WORLD_HEIGHT / 2.0)),
         Kingdom::Monster,
         Trap,
     ));
@@ -102,7 +94,6 @@ struct Spawner {
     color: Color,
     size: Vec2,
     speed: f32,
-    behaviour: Behaviour,
     timer: Timer,
     spawn_count: u32,
 }
@@ -113,7 +104,6 @@ impl Spawner {
         color: Color,
         size: Vec2,
         speed: f32,
-        behaviour: Behaviour,
         interval_seconds: f32,
     ) -> Self {
         Self {
@@ -121,7 +111,6 @@ impl Spawner {
             color,
             size,
             speed,
-            behaviour,
             timer: Timer::from_seconds(interval_seconds, TimerMode::Repeating),
             spawn_count: 0,
         }
@@ -160,7 +149,6 @@ fn spawner(
                 kingdom.clone(),
                 Creature,
                 Speed::new(spawner.speed),
-                spawner.behaviour.clone(),
             ));
         }
     }

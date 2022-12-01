@@ -7,8 +7,17 @@ pub struct CreaturesPlugin;
 
 impl Plugin for CreaturesPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(movement).add_system(attack);
+        app.init_resource::<Frontlines>()
+            .add_system(movement)
+            .add_system(attack)
+            .add_system(frontlines);
     }
+}
+
+#[derive(Resource, Default)]
+struct Frontlines {
+    human: Option<Entity>,
+    monster: Option<Entity>,
 }
 
 #[derive(Component)]
@@ -25,17 +34,11 @@ impl Speed {
     }
 }
 
-#[derive(Component, Clone)]
-pub enum Behaviour {
-    MoveRight,
-    MoveLeft,
-}
-
-fn movement(mut query: Query<(&mut Transform, &Speed, &Behaviour)>, time: Res<Time>) {
-    for (mut transform, speed, behaviour) in &mut query {
-        transform.translation.x += match behaviour {
-            Behaviour::MoveRight => time.delta_seconds() * speed.value,
-            Behaviour::MoveLeft => -time.delta_seconds() * speed.value,
+fn movement(mut query: Query<(&mut Transform, &Kingdom, &Speed)>, time: Res<Time>) {
+    for (mut transform, kingdom, speed) in &mut query {
+        transform.translation.x += match kingdom {
+            Kingdom::Human => time.delta_seconds() * speed.value,
+            Kingdom::Monster => -time.delta_seconds() * speed.value,
         };
     }
 }
@@ -54,6 +57,34 @@ fn attack(
             };
             if attacked_kingdom != attacker_kingdom {
                 commands.entity(attacked_entity).despawn_recursive();
+            }
+        }
+    }
+}
+
+fn frontlines(
+    query: Query<(Entity, &Transform, &Kingdom), With<Creature>>,
+    mut frontlines: ResMut<Frontlines>,
+) {
+    frontlines.human = None;
+    frontlines.monster = None;
+
+    let mut human_position = f32::NEG_INFINITY;
+    let mut monster_position = f32::INFINITY;
+
+    for (entity, transform, kingdom) in &query {
+        match kingdom {
+            Kingdom::Human => {
+                if transform.translation.x > human_position {
+                    frontlines.human = Some(entity);
+                    human_position = transform.translation.x;
+                }
+            }
+            Kingdom::Monster => {
+                if transform.translation.x < monster_position {
+                    frontlines.monster = Some(entity);
+                    monster_position = transform.translation.x;
+                }
             }
         }
     }
