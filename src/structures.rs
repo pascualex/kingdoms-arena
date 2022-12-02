@@ -3,7 +3,7 @@ use bevy_rapier2d::prelude::*;
 
 use crate::{
     collisions::{intersections_with, ColliderBundle},
-    creatures::{Creature, Speed},
+    creatures::{AdvancingState, Creature, Speed},
     palette, Kingdom, WORLD_EXTENSION, WORLD_HEIGHT,
 };
 
@@ -149,6 +149,7 @@ fn tick_spawners(
                 kingdom.clone(),
                 Creature,
                 Speed::new(spawner.speed),
+                AdvancingState,
             ));
         }
     }
