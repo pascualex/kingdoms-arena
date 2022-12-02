@@ -8,16 +8,38 @@ pub struct CreaturesPlugin;
 impl Plugin for CreaturesPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Frontlines>()
-            .add_system(move_creatures)
+            .add_system(advance_creatures)
             .add_system(perform_creature_attacks)
-            .add_system(update_frontlines);
+            .add_system(update_frontlines)
+            .add_system(transition_to_advancing)
+            .add_system(transition_to_shooting);
     }
 }
 
-#[derive(Resource, Default)]
+#[derive(Resource)]
 struct Frontlines {
-    human: Option<Entity>,
-    monster: Option<Entity>,
+    human: Frontline,
+    monster: Frontline,
+}
+
+impl Default for Frontlines {
+    fn default() -> Self {
+        Self {
+            human: Frontline {
+                position: f32::NEG_INFINITY,
+                entity: None,
+            },
+            monster: Frontline {
+                position: f32::INFINITY,
+                entity: None,
+            },
+        }
+    }
+}
+
+struct Frontline {
+    position: f32,
+    entity: Option<Entity>,
 }
 
 #[derive(Component)]
@@ -34,7 +56,56 @@ impl Speed {
     }
 }
 
-fn move_creatures(mut query: Query<(&mut Transform, &Kingdom, &Speed)>, time: Res<Time>) {
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+pub struct AdvancingState;
+
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+pub struct ShootingState;
+
+fn transition_to_advancing(
+    query: Query<(Entity, &Transform, &Kingdom), With<ShootingState>>,
+    frontlines: Res<Frontlines>,
+    mut commands: Commands,
+) {
+    for (entity, transform, kingdom) in &query {
+        if !near_enemy_frontline(transform, kingdom, &frontlines) {
+            commands
+                .entity(entity)
+                .insert(AdvancingState)
+                .remove::<ShootingState>();
+        }
+    }
+}
+
+fn transition_to_shooting(
+    query: Query<(Entity, &Transform, &Kingdom), With<AdvancingState>>,
+    frontlines: Res<Frontlines>,
+    mut commands: Commands,
+) {
+    for (entity, transform, kingdom) in &query {
+        if near_enemy_frontline(transform, kingdom, &frontlines) {
+            commands
+                .entity(entity)
+                .insert(ShootingState)
+                .remove::<AdvancingState>();
+        }
+    }
+}
+
+fn near_enemy_frontline(transform: &Transform, kingdom: &Kingdom, frontlines: &Frontlines) -> bool {
+    match kingdom {
+        Kingdom::Human => (frontlines.monster.position - transform.translation.x) < 5.0,
+        Kingdom::Monster => false,
+    }
+}
+
+#[allow(clippy::type_complexity)]
+fn advance_creatures(
+    mut query: Query<(&mut Transform, &Kingdom, &Speed), (With<Creature>, With<AdvancingState>)>,
+    time: Res<Time>,
+) {
     for (mut transform, kingdom, speed) in &mut query {
         transform.translation.x += match kingdom {
             Kingdom::Human => time.delta_seconds() * speed.value,
@@ -66,24 +137,24 @@ fn update_frontlines(
     query: Query<(Entity, &Transform, &Kingdom), With<Creature>>,
     mut frontlines: ResMut<Frontlines>,
 ) {
-    frontlines.human = None;
-    frontlines.monster = None;
+    frontlines.human.position = f32::NEG_INFINITY;
+    frontlines.monster.position = f32::INFINITY;
 
-    let mut human_position = f32::NEG_INFINITY;
-    let mut monster_position = f32::INFINITY;
+    frontlines.human.entity = None;
+    frontlines.monster.entity = None;
 
     for (entity, transform, kingdom) in &query {
         match kingdom {
             Kingdom::Human => {
-                if transform.translation.x > human_position {
-                    frontlines.human = Some(entity);
-                    human_position = transform.translation.x;
+                if transform.translation.x > frontlines.human.position {
+                    frontlines.human.position = transform.translation.x;
+                    frontlines.human.entity = Some(entity);
                 }
             }
             Kingdom::Monster => {
-                if transform.translation.x < monster_position {
-                    frontlines.monster = Some(entity);
-                    monster_position = transform.translation.x;
+                if transform.translation.x < frontlines.monster.position {
+                    frontlines.monster.position = transform.translation.x;
+                    frontlines.monster.entity = Some(entity);
                 }
             }
         }
