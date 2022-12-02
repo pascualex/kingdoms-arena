@@ -4,7 +4,7 @@ use bevy_rapier2d::prelude::*;
 use crate::{
     collisions::{intersections_with, ColliderBundle},
     palette,
-    subjects::{move_subjects, states::MovingState, Bow, Health, Speed, Subject},
+    subjects::{move_subjects, states::MovingState, weapons::Bow, Health, Speed, Subject},
     Kingdom, WORLD_EXTENSION, WORLD_HEIGHT,
 };
 
