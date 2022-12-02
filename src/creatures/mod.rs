@@ -1,18 +1,21 @@
+pub mod states;
+
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::RapierContext;
 
 use crate::{collisions::intersections_with, Kingdom};
 
+use self::states::{AdvancingState, CreaturesStatePlugin};
+
 pub struct CreaturesPlugin;
 
 impl Plugin for CreaturesPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<Frontlines>()
+        app.add_plugin(CreaturesStatePlugin)
+            .init_resource::<Frontlines>()
             .add_system(advance_creatures)
             .add_system(perform_creature_attacks)
-            .add_system(update_frontlines)
-            .add_system(transition_to_advancing)
-            .add_system(transition_to_shooting);
+            .add_system(update_frontlines);
     }
 }
 
@@ -53,51 +56,6 @@ pub struct Speed {
 impl Speed {
     pub fn new(value: f32) -> Self {
         Self { value }
-    }
-}
-
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-pub struct AdvancingState;
-
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-pub struct ShootingState;
-
-fn transition_to_advancing(
-    query: Query<(Entity, &Transform, &Kingdom), With<ShootingState>>,
-    frontlines: Res<Frontlines>,
-    mut commands: Commands,
-) {
-    for (entity, transform, kingdom) in &query {
-        if !near_enemy_frontline(transform, kingdom, &frontlines) {
-            commands
-                .entity(entity)
-                .insert(AdvancingState)
-                .remove::<ShootingState>();
-        }
-    }
-}
-
-fn transition_to_shooting(
-    query: Query<(Entity, &Transform, &Kingdom), With<AdvancingState>>,
-    frontlines: Res<Frontlines>,
-    mut commands: Commands,
-) {
-    for (entity, transform, kingdom) in &query {
-        if near_enemy_frontline(transform, kingdom, &frontlines) {
-            commands
-                .entity(entity)
-                .insert(ShootingState)
-                .remove::<AdvancingState>();
-        }
-    }
-}
-
-fn near_enemy_frontline(transform: &Transform, kingdom: &Kingdom, frontlines: &Frontlines) -> bool {
-    match kingdom {
-        Kingdom::Human => (frontlines.monster.position - transform.translation.x) < 5.0,
-        Kingdom::Monster => false,
     }
 }
 
