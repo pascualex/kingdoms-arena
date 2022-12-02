@@ -13,7 +13,7 @@ impl Plugin for SubjectStatesPlugin {
 
 #[derive(Component)]
 #[component(storage = "SparseSet")]
-pub struct AdvancingState;
+pub struct MovingState;
 
 #[derive(Component)]
 #[component(storage = "SparseSet")]
@@ -28,14 +28,14 @@ fn transition_to_advancing(
         if !near_enemy_frontline(transform, kingdom, &frontlines) {
             commands
                 .entity(entity)
-                .insert(AdvancingState)
+                .insert(MovingState)
                 .remove::<ShootingState>();
         }
     }
 }
 
 fn transition_to_shooting(
-    query: Query<(Entity, &Transform, &Kingdom), With<AdvancingState>>,
+    query: Query<(Entity, &Transform, &Kingdom), With<MovingState>>,
     frontlines: Res<Frontlines>,
     mut commands: Commands,
 ) {
@@ -44,7 +44,7 @@ fn transition_to_shooting(
             commands
                 .entity(entity)
                 .insert(ShootingState)
-                .remove::<AdvancingState>();
+                .remove::<MovingState>();
         }
     }
 }

@@ -4,7 +4,7 @@ use bevy_rapier2d::prelude::*;
 use crate::{
     collisions::{intersections_with, ColliderBundle},
     palette,
-    subjects::{advance_subjects, states::AdvancingState, Health, Speed, Subject},
+    subjects::{move_subjects, states::MovingState, Bow, Health, Speed, Subject},
     Kingdom, WORLD_EXTENSION, WORLD_HEIGHT,
 };
 
@@ -14,7 +14,7 @@ impl Plugin for StructuresPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(setup)
             .add_system(tick_spawners)
-            .add_system(check_traps.after(tick_spawners).after(advance_subjects));
+            .add_system(check_traps.after(tick_spawners).after(move_subjects));
     }
 }
 
@@ -151,7 +151,8 @@ fn tick_spawners(
                 Subject,
                 Health::new(1),
                 Speed::new(spawner.speed),
-                AdvancingState,
+                Bow::new(3.0),
+                MovingState,
             ));
         }
     }
