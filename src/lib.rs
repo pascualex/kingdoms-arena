@@ -62,7 +62,7 @@ fn setup(mut commands: Commands) {
 }
 
 #[derive(Component, PartialEq, Eq, Clone)]
-enum Kingdom {
+pub enum Kingdom {
     Human,
     Monster,
 }
