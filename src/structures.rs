@@ -3,7 +3,7 @@ use bevy_rapier2d::prelude::*;
 
 use crate::{
     collisions::{intersections_with, ColliderBundle},
-    creatures::{AdvancingState, Creature, Speed},
+    creatures::{states::AdvancingState, Creature, Speed},
     palette, Kingdom, WORLD_EXTENSION, WORLD_HEIGHT,
 };
 
