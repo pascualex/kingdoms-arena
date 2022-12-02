@@ -1,14 +1,14 @@
 mod collisions;
-mod creatures;
 mod palette;
 mod structures;
+mod subjects;
 
 use bevy::{
     core_pipeline::clear_color::ClearColorConfig, prelude::*, render::camera::ScalingMode,
     sprite::Anchor,
 };
 
-use self::{creatures::CreaturesPlugin, structures::StructuresPlugin};
+use self::{structures::StructuresPlugin, subjects::SubjectsPlugin};
 
 const WORLD_HEIGHT: f32 = 14.0;
 const WORLD_EXTENSION: f32 = 20.0;
@@ -21,7 +21,7 @@ pub struct AppPlugin;
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(StructuresPlugin)
-            .add_plugin(CreaturesPlugin)
+            .add_plugin(SubjectsPlugin)
             .add_state(AppState::Game)
             .add_startup_system(setup);
     }

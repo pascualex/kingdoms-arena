@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 
-use crate::{creatures::Frontlines, Kingdom};
+use crate::{subjects::Frontlines, Kingdom};
 
-pub struct CreaturesStatePlugin;
+pub struct SubjectStatesPlugin;
 
-impl Plugin for CreaturesStatePlugin {
+impl Plugin for SubjectStatesPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(transition_to_advancing)
             .add_system(transition_to_shooting);
