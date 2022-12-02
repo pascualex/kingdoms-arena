@@ -4,7 +4,7 @@ use bevy_rapier2d::prelude::*;
 use crate::{
     collisions::{intersections_with, ColliderBundle},
     palette,
-    subjects::{states::AdvancingState, Speed, Subject},
+    subjects::{states::AdvancingState, Health, Speed, Subject},
     Kingdom, WORLD_EXTENSION, WORLD_HEIGHT,
 };
 
@@ -149,6 +149,7 @@ fn tick_spawners(
                 )),
                 kingdom.clone(),
                 Subject,
+                Health::new(1),
                 Speed::new(spawner.speed),
                 AdvancingState,
             ));
@@ -159,22 +160,20 @@ fn tick_spawners(
 fn check_traps(
     trap_query: Query<(Entity, &Kingdom), With<Trap>>,
     trigger_query: Query<&Kingdom, With<Subject>>,
-    subject_query: Query<(Entity, &Kingdom), With<Subject>>,
+    mut subject_query: Query<(&Kingdom, &mut Health), With<Subject>>,
     context: Res<RapierContext>,
-    mut commands: Commands,
 ) {
     for (trap_entity, trap_kingdom) in &trap_query {
         for trigger_entity in intersections_with(trap_entity, &context) {
-            let trigger_kingdom = match trigger_query.get(trigger_entity) {
-                Ok(kingdom) => kingdom,
-                Err(_) => continue,
+            let Ok(trigger_kingdom) = trigger_query.get(trigger_entity) else {
+                continue;
             };
             if trigger_kingdom == trap_kingdom {
                 continue;
             }
-            for (subject_entity, subject_kingdom) in &subject_query {
+            for (subject_kingdom, mut subject_health) in &mut subject_query {
                 if subject_kingdom == trigger_kingdom {
-                    commands.entity(subject_entity).despawn_recursive();
+                    subject_health.kill();
                 }
             }
         }

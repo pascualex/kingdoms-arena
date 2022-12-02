@@ -15,7 +15,8 @@ impl Plugin for SubjectsPlugin {
             .init_resource::<Frontlines>()
             .add_system(advance_subjects)
             .add_system(perform_subject_attacks)
-            .add_system(update_frontlines);
+            .add_system(update_frontlines)
+            .add_system(despawn_dead_subjects);
     }
 }
 
@@ -49,6 +50,29 @@ struct Frontline {
 pub struct Subject;
 
 #[derive(Component)]
+pub struct Health {
+    current: u32,
+}
+
+impl Health {
+    pub fn new(initial: u32) -> Self {
+        Self { current: initial }
+    }
+
+    pub fn damage(&mut self, amount: u32) {
+        self.current = self.current.saturating_sub(amount);
+    }
+
+    pub fn kill(&mut self) {
+        self.current = 0;
+    }
+
+    pub fn is_dead(&self) -> bool {
+        self.current == 0
+    }
+}
+
+#[derive(Component)]
 pub struct Speed {
     value: f32,
 }
@@ -56,6 +80,14 @@ pub struct Speed {
 impl Speed {
     pub fn new(value: f32) -> Self {
         Self { value }
+    }
+}
+
+fn despawn_dead_subjects(query: Query<(Entity, &Health), With<Subject>>, mut commands: Commands) {
+    for (entity, health) in &query {
+        if health.is_dead() {
+            commands.entity(entity).despawn_recursive();
+        }
     }
 }
 
@@ -74,18 +106,19 @@ fn advance_subjects(
 
 fn perform_subject_attacks(
     attacker_query: Query<(Entity, &Kingdom), With<Subject>>,
-    attacked_query: Query<&Kingdom, With<Subject>>,
+    mut attacked_query: Query<(&Kingdom, &mut Health), With<Subject>>,
     context: Res<RapierContext>,
-    mut commands: Commands,
 ) {
     for (attacker_entity, attacker_kingdom) in &attacker_query {
         for attacked_entity in intersections_with(attacker_entity, &context) {
-            let attacked_kingdom = match attacked_query.get(attacked_entity) {
-                Ok(kingdom) => kingdom,
-                Err(_) => continue,
+            let Ok((
+                attacked_kingdom,
+                mut attacked_health,
+            )) = attacked_query.get_mut(attacked_entity) else {
+                continue;
             };
             if attacked_kingdom != attacker_kingdom {
-                commands.entity(attacked_entity).despawn_recursive();
+                attacked_health.damage(1);
             }
         }
     }
