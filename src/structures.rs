@@ -171,9 +171,9 @@ fn check_traps(
             if trigger_kingdom == trap_kingdom {
                 continue;
             }
-            for (subject_kingdom, mut subject_health) in &mut subject_query {
+            for (subject_kingdom, mut health) in &mut subject_query {
                 if subject_kingdom == trigger_kingdom {
-                    subject_health.kill();
+                    health.kill();
                 }
             }
         }

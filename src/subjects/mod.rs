@@ -111,14 +111,11 @@ fn perform_subject_attacks(
 ) {
     for (attacker_entity, attacker_kingdom) in &attacker_query {
         for attacked_entity in intersections_with(attacker_entity, &context) {
-            let Ok((
-                attacked_kingdom,
-                mut attacked_health,
-            )) = attacked_query.get_mut(attacked_entity) else {
+            let Ok((attacked_kingdom, mut health)) = attacked_query.get_mut(attacked_entity) else {
                 continue;
             };
             if attacked_kingdom != attacker_kingdom {
-                attacked_health.damage(1);
+                health.damage(1);
             }
         }
     }
