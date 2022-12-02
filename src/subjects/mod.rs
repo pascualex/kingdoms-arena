@@ -5,16 +5,16 @@ use bevy_rapier2d::prelude::RapierContext;
 
 use crate::{collisions::intersections_with, Kingdom};
 
-use self::states::{AdvancingState, CreaturesStatePlugin};
+use self::states::{AdvancingState, SubjectStatesPlugin};
 
-pub struct CreaturesPlugin;
+pub struct SubjectsPlugin;
 
-impl Plugin for CreaturesPlugin {
+impl Plugin for SubjectsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(CreaturesStatePlugin)
+        app.add_plugin(SubjectStatesPlugin)
             .init_resource::<Frontlines>()
-            .add_system(advance_creatures)
-            .add_system(perform_creature_attacks)
+            .add_system(advance_subjects)
+            .add_system(perform_subject_attacks)
             .add_system(update_frontlines);
     }
 }
@@ -46,7 +46,7 @@ struct Frontline {
 }
 
 #[derive(Component)]
-pub struct Creature;
+pub struct Subject;
 
 #[derive(Component)]
 pub struct Speed {
@@ -60,8 +60,8 @@ impl Speed {
 }
 
 #[allow(clippy::type_complexity)]
-fn advance_creatures(
-    mut query: Query<(&mut Transform, &Kingdom, &Speed), (With<Creature>, With<AdvancingState>)>,
+fn advance_subjects(
+    mut query: Query<(&mut Transform, &Kingdom, &Speed), (With<Subject>, With<AdvancingState>)>,
     time: Res<Time>,
 ) {
     for (mut transform, kingdom, speed) in &mut query {
@@ -72,9 +72,9 @@ fn advance_creatures(
     }
 }
 
-fn perform_creature_attacks(
-    attacker_query: Query<(Entity, &Kingdom), With<Creature>>,
-    attacked_query: Query<&Kingdom, With<Creature>>,
+fn perform_subject_attacks(
+    attacker_query: Query<(Entity, &Kingdom), With<Subject>>,
+    attacked_query: Query<&Kingdom, With<Subject>>,
     context: Res<RapierContext>,
     mut commands: Commands,
 ) {
@@ -92,7 +92,7 @@ fn perform_creature_attacks(
 }
 
 fn update_frontlines(
-    query: Query<(Entity, &Transform, &Kingdom), With<Creature>>,
+    query: Query<(Entity, &Transform, &Kingdom), With<Subject>>,
     mut frontlines: ResMut<Frontlines>,
 ) {
     frontlines.human.position = f32::NEG_INFINITY;
