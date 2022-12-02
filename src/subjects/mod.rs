@@ -14,9 +14,9 @@ impl Plugin for SubjectsPlugin {
         app.add_plugin(SubjectStatesPlugin)
             .init_resource::<Frontlines>()
             .add_system(advance_subjects)
+            .add_system(update_frontlines.after(advance_subjects))
             .add_system(perform_subject_attacks)
-            .add_system(update_frontlines)
-            .add_system(despawn_dead_subjects);
+            .add_system(despawn_dead_subjects.after(perform_subject_attacks));
     }
 }
 
@@ -92,7 +92,7 @@ fn despawn_dead_subjects(query: Query<(Entity, &Health), With<Subject>>, mut com
 }
 
 #[allow(clippy::type_complexity)]
-fn advance_subjects(
+pub fn advance_subjects(
     mut query: Query<(&mut Transform, &Kingdom, &Speed), (With<Subject>, With<AdvancingState>)>,
     time: Res<Time>,
 ) {
