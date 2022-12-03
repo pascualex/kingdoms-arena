@@ -2,9 +2,8 @@ pub mod states;
 pub mod weapons;
 
 use bevy::prelude::*;
-use bevy_rapier2d::prelude::*;
 
-use crate::{collisions::intersections_with, Kingdom};
+use crate::Kingdom;
 
 use self::{
     states::{MovingState, ShootingState, SubjectStatesPlugin},
@@ -20,8 +19,7 @@ impl Plugin for SubjectsPlugin {
             .init_resource::<Frontlines>()
             .add_system(move_subjects)
             .add_system(update_frontlines.after(move_subjects))
-            .add_system(perform_subject_attacks)
-            .add_system(despawn_dead_subjects.after(perform_subject_attacks));
+            .add_system(despawn_dead_subjects);
     }
 }
 
@@ -88,7 +86,10 @@ impl Speed {
     }
 }
 
-fn despawn_dead_subjects(query: Query<(Entity, &Health), With<Subject>>, mut commands: Commands) {
+pub fn despawn_dead_subjects(
+    query: Query<(Entity, &Health), With<Subject>>,
+    mut commands: Commands,
+) {
     for (entity, health) in &query {
         if health.is_dead() {
             commands.entity(entity).despawn_recursive();
@@ -105,23 +106,6 @@ pub fn move_subjects(
             Kingdom::Human => time.delta_seconds() * speed.value,
             Kingdom::Monster => -time.delta_seconds() * speed.value,
         };
-    }
-}
-
-fn perform_subject_attacks(
-    attacker_query: Query<(Entity, &Kingdom), With<Subject>>,
-    mut attacked_query: Query<(&Kingdom, &mut Health), With<Subject>>,
-    context: Res<RapierContext>,
-) {
-    for (attacker_entity, attacker_kingdom) in &attacker_query {
-        for attacked_entity in intersections_with(attacker_entity, &context) {
-            let Ok((attacked_kingdom, mut health)) = attacked_query.get_mut(attacked_entity) else {
-                continue;
-            };
-            if attacked_kingdom != attacker_kingdom {
-                health.damage(1);
-            }
-        }
     }
 }
 

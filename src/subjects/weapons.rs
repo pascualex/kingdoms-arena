@@ -4,7 +4,7 @@ use bevy_rapier2d::prelude::*;
 use crate::{
     collisions::{intersections_with, ColliderBundle},
     palette,
-    subjects::{Health, ShootingState, Subject},
+    subjects::{despawn_dead_subjects, Health, ShootingState, Subject},
     Kingdom,
 };
 
@@ -12,13 +12,21 @@ pub struct WeaponsPlugin;
 
 impl Plugin for WeaponsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(recharge_bows)
+        app.add_system(swing_subject_swords.before(despawn_dead_subjects))
+            .add_system(recharge_bows)
             .add_system(shoot_subject_bows.after(recharge_bows))
             .add_system(move_arrows.after(shoot_subject_bows))
-            .add_system(collide_arrows.after(move_arrows))
+            .add_system(
+                collide_arrows
+                    .after(move_arrows)
+                    .before(despawn_dead_subjects),
+            )
             .add_system(despawn_arrows.after(shoot_subject_bows));
     }
 }
+
+#[derive(Component)]
+pub struct Sword;
 
 #[derive(Component)]
 pub struct Bow {
@@ -42,6 +50,23 @@ impl Arrow {
     fn new(lifetime_seconds: f32) -> Self {
         Self {
             timer: Timer::from_seconds(lifetime_seconds, TimerMode::Once),
+        }
+    }
+}
+
+fn swing_subject_swords(
+    sword_query: Query<(Entity, &Kingdom), (With<Subject>, With<Sword>)>,
+    mut health_query: Query<(&Kingdom, &mut Health), With<Subject>>,
+    context: Res<RapierContext>,
+) {
+    for (sword_entity, sword_kingdom) in &sword_query {
+        for health_entity in intersections_with(sword_entity, &context) {
+            let Ok((health_kingdom, mut health)) = health_query.get_mut(health_entity) else {
+                continue;
+            };
+            if health_kingdom != sword_kingdom {
+                health.damage(1);
+            }
         }
     }
 }
