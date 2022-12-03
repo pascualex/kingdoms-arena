@@ -12,8 +12,9 @@ pub struct WeaponsPlugin;
 impl Plugin for WeaponsPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(recharge_bows)
-            .add_system(shoot_subject_bows)
-            .add_system(move_arrows);
+            .add_system(shoot_subject_bows.after(recharge_bows))
+            .add_system(move_arrows.after(shoot_subject_bows))
+            .add_system(despawn_arrows.after(shoot_subject_bows));
     }
 }
 
@@ -31,7 +32,17 @@ impl Bow {
 }
 
 #[derive(Component)]
-pub struct Arrow;
+pub struct Arrow {
+    timer: Timer,
+}
+
+impl Arrow {
+    fn new(lifetime_seconds: f32) -> Self {
+        Self {
+            timer: Timer::from_seconds(lifetime_seconds, TimerMode::Once),
+        }
+    }
+}
 
 fn recharge_bows(mut query: Query<&mut Bow>, time: Res<Time>) {
     for mut bow in &mut query {
@@ -60,7 +71,7 @@ fn shoot_subject_bows(
                 ..default()
             },
             ColliderBundle::kinematic(Collider::cuboid(0.05, 0.05)),
-            Arrow,
+            Arrow::new(5.0),
         ));
     }
 }
@@ -68,5 +79,14 @@ fn shoot_subject_bows(
 fn move_arrows(mut query: Query<&mut Transform, With<Arrow>>, time: Res<Time>) {
     for mut transform in &mut query {
         transform.translation.x += time.delta_seconds() * 5.0;
+    }
+}
+
+fn despawn_arrows(mut query: Query<(Entity, &mut Arrow)>, time: Res<Time>, mut commands: Commands) {
+    for (entity, mut arrow) in &mut query {
+        arrow.timer.tick(time.delta());
+        if arrow.timer.finished() {
+            commands.entity(entity).despawn_recursive();
+        }
     }
 }
