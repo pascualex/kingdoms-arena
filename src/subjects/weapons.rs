@@ -81,7 +81,7 @@ fn shoot_subject_bows(
 
 fn move_arrows(mut query: Query<&mut Transform, With<Arrow>>, time: Res<Time>) {
     for mut transform in &mut query {
-        transform.translation.x += time.delta_seconds() * 5.0;
+        transform.translation.x += time.delta_seconds() * 10.0;
     }
 }
 
