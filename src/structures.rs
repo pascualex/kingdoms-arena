@@ -6,7 +6,12 @@ use bevy_rapier2d::prelude::*;
 use crate::{
     collisions::{intersections_with, ColliderBundle},
     palette,
-    subjects::{move_subjects, states::MovingState, weapons::Bow, Health, Speed, Subject},
+    subjects::{
+        move_subjects,
+        states::MovingState,
+        weapons::{Bow, Sword},
+        Health, Speed, Subject,
+    },
     Kingdom, WORLD_EXTENSION, WORLD_HEIGHT,
 };
 
@@ -134,7 +139,7 @@ fn tick_spawners(
         spawner.timer.tick(time.delta());
         for _ in 0..spawner.timer.times_finished_this_tick() {
             spawner.spawn_count += 1;
-            commands.spawn((
+            let mut spawn_commands = commands.spawn((
                 Name::new(format!("{} {}", spawner.name, spawner.spawn_count)),
                 SpriteBundle {
                     sprite: Sprite {
@@ -155,9 +160,16 @@ fn tick_spawners(
                 Subject,
                 Health::new(1),
                 Speed::new(spawner.speed),
-                Bow::new(3.0),
                 MovingState,
             ));
+            match kingdom {
+                Kingdom::Human => {
+                    spawn_commands.insert(Bow::new(3.0));
+                }
+                Kingdom::Monster => {
+                    spawn_commands.insert(Sword);
+                }
+            }
         }
     }
 }
