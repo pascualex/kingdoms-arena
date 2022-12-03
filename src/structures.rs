@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_rapier2d::prelude::*;
 
@@ -33,7 +35,7 @@ fn setup(mut commands: Commands) {
             ..default()
         },
         Kingdom::Human,
-        Spawner::new("Human", palette::LIGHT_PINK, Vec2::new(1.1, 1.8), 1.0, 2.0),
+        Spawner::new("Human", palette::LIGHT_PINK, Vec2::new(1.1, 1.8), 1.0, 8.0),
     ));
     commands.spawn((
         Name::new("Monster spawner"),
@@ -53,7 +55,7 @@ fn setup(mut commands: Commands) {
             palette::DARK_BLACK,
             Vec2::new(1.0, 1.4),
             2.0,
-            1.0,
+            2.0,
         ),
     ));
     // wipeout traps
@@ -107,12 +109,14 @@ impl Spawner {
         speed: f32,
         interval_seconds: f32,
     ) -> Self {
+        let mut timer = Timer::from_seconds(interval_seconds, TimerMode::Repeating);
+        timer.set_elapsed(Duration::from_secs_f32(interval_seconds));
         Self {
             name: name.into(),
             color,
             size,
             speed,
-            timer: Timer::from_seconds(interval_seconds, TimerMode::Repeating),
+            timer,
             spawn_count: 0,
         }
     }
