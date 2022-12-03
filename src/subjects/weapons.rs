@@ -2,9 +2,10 @@ use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use crate::{
-    collisions::ColliderBundle,
+    collisions::{intersections_with, ColliderBundle},
     palette,
-    subjects::{ShootingState, Subject},
+    subjects::{Health, ShootingState, Subject},
+    Kingdom,
 };
 
 pub struct WeaponsPlugin;
@@ -14,6 +15,7 @@ impl Plugin for WeaponsPlugin {
         app.add_system(recharge_bows)
             .add_system(shoot_subject_bows.after(recharge_bows))
             .add_system(move_arrows.after(shoot_subject_bows))
+            .add_system(collide_arrows.after(move_arrows))
             .add_system(despawn_arrows.after(shoot_subject_bows));
     }
 }
@@ -51,10 +53,10 @@ fn recharge_bows(mut query: Query<&mut Bow>, time: Res<Time>) {
 }
 
 fn shoot_subject_bows(
-    mut query: Query<(&Transform, &mut Bow), (With<Subject>, With<ShootingState>)>,
+    mut query: Query<(&Transform, &Kingdom, &mut Bow), (With<Subject>, With<ShootingState>)>,
     mut commands: Commands,
 ) {
-    for (transform, mut bow) in &mut query {
+    for (transform, kingdom, mut bow) in &mut query {
         if !bow.timer.finished() {
             continue;
         }
@@ -71,6 +73,7 @@ fn shoot_subject_bows(
                 ..default()
             },
             ColliderBundle::kinematic(Collider::cuboid(0.05, 0.05)),
+            kingdom.clone(),
             Arrow::new(5.0),
         ));
     }
@@ -79,6 +82,26 @@ fn shoot_subject_bows(
 fn move_arrows(mut query: Query<&mut Transform, With<Arrow>>, time: Res<Time>) {
     for mut transform in &mut query {
         transform.translation.x += time.delta_seconds() * 5.0;
+    }
+}
+
+fn collide_arrows(
+    arrow_query: Query<(Entity, &Kingdom), With<Arrow>>,
+    mut subject_query: Query<(&Kingdom, &mut Health), With<Subject>>,
+    context: Res<RapierContext>,
+    mut commands: Commands,
+) {
+    for (arrow_entity, arrow_kingdom) in &arrow_query {
+        for subject_entity in intersections_with(arrow_entity, &context) {
+            let Ok((subject_kingdom, mut health)) = subject_query.get_mut(subject_entity) else {
+                continue;
+            };
+            if subject_kingdom != arrow_kingdom {
+                health.damage(1);
+                commands.entity(arrow_entity).despawn_recursive();
+                break;
+            }
+        }
     }
 }
 
