@@ -19,6 +19,7 @@ impl Plugin for WeaponsPlugin {
             .add_system(
                 collide_arrows
                     .after(move_arrows)
+                    .after(swing_subject_swords)
                     .before(despawn_dead_subjects),
             )
             .add_system(despawn_arrows.after(shoot_subject_bows));
@@ -121,7 +122,7 @@ fn collide_arrows(
             let Ok((subject_kingdom, mut health)) = subject_query.get_mut(subject_entity) else {
                 continue;
             };
-            if subject_kingdom != arrow_kingdom {
+            if !health.is_dead() && subject_kingdom != arrow_kingdom {
                 health.damage(1);
                 commands.entity(arrow_entity).despawn_recursive();
                 break;
