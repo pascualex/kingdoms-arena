@@ -7,7 +7,6 @@ use crate::{
     collisions::{intersections_with, ColliderBundle},
     palette,
     subjects::{
-        move_subjects,
         states::MovingState,
         weapons::{Bow, Sword},
         Health, Speed, Subject,
@@ -21,7 +20,7 @@ impl Plugin for StructuresPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(setup)
             .add_system(tick_spawners)
-            .add_system(check_traps.after(tick_spawners).after(move_subjects));
+            .add_system(check_traps.after(tick_spawners));
     }
 }
 
@@ -40,7 +39,7 @@ fn setup(mut commands: Commands) {
             ..default()
         },
         Kingdom::Human,
-        Spawner::new("Human", palette::LIGHT_PINK, Vec2::new(1.1, 1.8), 1.0, 8.0),
+        Spawner::new("Human", palette::LIGHT_PINK, Vec2::new(1.1, 1.8), 1.0, 12.0),
     ));
     commands.spawn((
         Name::new("Monster spawner"),
@@ -156,6 +155,7 @@ fn tick_spawners(
                     spawner.size.x / 2.0,
                     spawner.size.y / 2.0,
                 )),
+                Velocity::zero(),
                 kingdom.clone(),
                 Subject,
                 Health::new(1),

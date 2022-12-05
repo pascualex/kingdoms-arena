@@ -2,12 +2,15 @@ use bevy::prelude::*;
 
 use crate::{subjects::Frontlines, Kingdom};
 
+#[derive(SystemLabel)]
+pub struct UpdateSubjectState;
+
 pub struct SubjectStatesPlugin;
 
 impl Plugin for SubjectStatesPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(transition_to_advancing)
-            .add_system(transition_to_shooting);
+        app.add_system(transition_to_moving.label(UpdateSubjectState))
+            .add_system(transition_to_shooting.label(UpdateSubjectState));
     }
 }
 
@@ -19,7 +22,7 @@ pub struct MovingState;
 #[component(storage = "SparseSet")]
 pub struct ShootingState;
 
-fn transition_to_advancing(
+fn transition_to_moving(
     query: Query<(Entity, &Transform, &Kingdom), With<ShootingState>>,
     frontlines: Res<Frontlines>,
     mut commands: Commands,
@@ -51,7 +54,7 @@ fn transition_to_shooting(
 
 fn near_enemy_frontline(transform: &Transform, kingdom: &Kingdom, frontlines: &Frontlines) -> bool {
     match kingdom {
-        Kingdom::Human => (frontlines.monster.position - transform.translation.x) < 5.0,
+        Kingdom::Human => (frontlines.monster.position - transform.translation.x) < 10.0,
         Kingdom::Monster => false,
     }
 }

@@ -2,11 +2,12 @@ pub mod states;
 pub mod weapons;
 
 use bevy::prelude::*;
+use bevy_rapier2d::prelude::Velocity;
 
 use crate::Kingdom;
 
 use self::{
-    states::{MovingState, ShootingState, SubjectStatesPlugin},
+    states::{MovingState, ShootingState, SubjectStatesPlugin, UpdateSubjectState},
     weapons::WeaponsPlugin,
 };
 
@@ -17,8 +18,8 @@ impl Plugin for SubjectsPlugin {
         app.add_plugin(SubjectStatesPlugin)
             .add_plugin(WeaponsPlugin)
             .init_resource::<Frontlines>()
-            .add_system(move_subjects)
-            .add_system(update_frontlines.after(move_subjects))
+            .add_system(set_subject_velocities.after(UpdateSubjectState))
+            .add_system(update_frontlines)
             .add_system(despawn_dead_subjects);
     }
 }
@@ -97,14 +98,16 @@ pub fn despawn_dead_subjects(
     }
 }
 
-pub fn move_subjects(
-    mut query: Query<(&mut Transform, &Kingdom, &Speed), (With<Subject>, With<MovingState>)>,
-    time: Res<Time>,
+fn set_subject_velocities(
+    mut query: Query<(&mut Velocity, &Kingdom, &Speed, Option<&MovingState>), With<Subject>>,
 ) {
-    for (mut transform, kingdom, speed) in &mut query {
-        transform.translation.x += match kingdom {
-            Kingdom::Human => time.delta_seconds() * speed.value,
-            Kingdom::Monster => -time.delta_seconds() * speed.value,
+    for (mut velocity, kingdom, speed, moving_state) in &mut query {
+        velocity.linvel.x = match moving_state {
+            Some(_) => match kingdom {
+                Kingdom::Human => speed.value,
+                Kingdom::Monster => -speed.value,
+            },
+            None => 0.0,
         };
     }
 }
