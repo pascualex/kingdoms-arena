@@ -111,8 +111,9 @@ fn shoot_subject_bows(
         let diff = target_transform.translation - bow_transform.translation;
         let velocity_x = 10.0 * diff.x.signum();
         let relative_velocity_x = velocity_x - target_velocity.linvel.x;
+        let random_offset = 0.75 + 0.75 * fastrand::f32();
         // TODO: this doesn't work when the target runs away faster than the arrow
-        let flight_time = diff.x / relative_velocity_x;
+        let flight_time = (diff.x / relative_velocity_x) * random_offset;
         // TODO: this doesn't take vertical velocity into account for prediction
         let velocity_y = diff.y / flight_time + GRAVITY_ACCELERATION * flight_time / 2.0;
 
@@ -145,13 +146,14 @@ fn set_arrow_velocities(mut query: Query<&mut Velocity, With<Arrow>>, time: Res<
 }
 
 fn collide_arrows(
-    mut arrow_query: Query<(Entity, &Transform, &mut Velocity, &Kingdom), With<Arrow>>,
+    mut arrow_query: Query<(Entity, &mut Transform, &mut Velocity, &Kingdom), With<Arrow>>,
     mut subject_query: Query<(&Kingdom, &mut Health), With<Subject>>,
     context: Res<RapierContext>,
     mut commands: Commands,
 ) {
-    for (arrow_entity, transform, mut velocity, arrow_kingdom) in &mut arrow_query {
+    for (arrow_entity, mut transform, mut velocity, arrow_kingdom) in &mut arrow_query {
         if transform.translation.y <= 0.0 {
+            transform.translation.y = 0.0;
             velocity.linvel = Vec2::ZERO;
             commands.entity(arrow_entity).remove::<Arrow>();
             continue;
