@@ -12,7 +12,7 @@ pub struct ColliderBundle {
 impl ColliderBundle {
     pub fn kinematic(collider: Collider) -> Self {
         Self {
-            rigid_body: RigidBody::KinematicPositionBased,
+            rigid_body: RigidBody::KinematicVelocityBased,
             collider,
             sensor: Sensor,
             active_collision_types: ActiveCollisionTypes::KINEMATIC_KINEMATIC,
