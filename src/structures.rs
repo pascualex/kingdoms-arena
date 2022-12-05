@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use bevy::{prelude::*, sprite::Anchor};
+use bevy::{prelude::*, sprite::Anchor, time::Stopwatch};
 use bevy_rapier2d::prelude::*;
 
 use crate::{
@@ -101,8 +101,9 @@ struct Spawner {
     color: Color,
     size: Vec2,
     speed: f32,
-    timer: Timer,
-    spawn_count: u32,
+    stopwatch: Stopwatch,
+    average_interval: Duration,
+    next_interval: Duration,
 }
 
 impl Spawner {
@@ -113,15 +114,14 @@ impl Spawner {
         speed: f32,
         interval_seconds: f32,
     ) -> Self {
-        let mut timer = Timer::from_seconds(interval_seconds, TimerMode::Repeating);
-        timer.set_elapsed(Duration::from_secs_f32(interval_seconds));
         Self {
             name: name.into(),
             color,
             size,
             speed,
-            timer,
-            spawn_count: 0,
+            stopwatch: Stopwatch::new(),
+            average_interval: Duration::from_secs_f32(interval_seconds),
+            next_interval: Duration::ZERO,
         }
     }
 }
@@ -135,11 +135,14 @@ fn tick_spawners(
     mut commands: Commands,
 ) {
     for (transform, kingdom, mut spawner) in &mut query {
-        spawner.timer.tick(time.delta());
-        for _ in 0..spawner.timer.times_finished_this_tick() {
-            spawner.spawn_count += 1;
+        spawner.stopwatch.tick(time.delta());
+        while spawner.stopwatch.elapsed() >= spawner.next_interval {
+            let remaining = spawner.stopwatch.elapsed() - spawner.next_interval;
+            spawner.stopwatch.set_elapsed(remaining);
+            let random_offset = 0.5 + fastrand::f32();
+            spawner.next_interval = spawner.average_interval.mul_f32(random_offset);
             let mut spawn_commands = commands.spawn((
-                Name::new(format!("{} {}", spawner.name, spawner.spawn_count)),
+                Name::new(spawner.name.clone()),
                 SpriteBundle {
                     sprite: Sprite {
                         color: spawner.color,
