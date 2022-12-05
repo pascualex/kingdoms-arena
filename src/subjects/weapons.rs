@@ -131,7 +131,7 @@ fn shoot_subject_bows(
             },
             ColliderBundle::kinematic(Collider::cuboid(0.05, 0.05)),
             Velocity::linear(Vec2::new(velocity_x, velocity_y)),
-            Lifetime::new(60.0),
+            Lifetime::new(20.0),
             kingdom.clone(),
             Arrow,
         ));
