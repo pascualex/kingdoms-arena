@@ -90,7 +90,7 @@ fn recharge_bows(mut query: Query<&mut Bow>, time: Res<Time>) {
 
 fn shoot_subject_bows(
     mut bow_query: Query<(&Transform, &Kingdom, &mut Bow), (With<Subject>, With<ShootingState>)>,
-    target_query: Query<&Transform, With<Subject>>,
+    target_query: Query<(&Transform, &Velocity), With<Subject>>,
     frontlines: Res<Frontlines>,
     mut commands: Commands,
 ) {
@@ -98,6 +98,7 @@ fn shoot_subject_bows(
         if !bow.timer.finished() {
             continue;
         }
+
         let target_entity = match kingdom {
             Kingdom::Human => frontlines.monster.entity,
             Kingdom::Monster => frontlines.human.entity,
@@ -105,12 +106,18 @@ fn shoot_subject_bows(
         let Some(target_entity) = target_entity else {
             continue;
         };
-        let target_transform = target_query.get(target_entity).unwrap();
+        let (target_transform, target_velocity) = target_query.get(target_entity).unwrap();
+
         let diff = target_transform.translation - bow_transform.translation;
         let velocity_x = 10.0 * diff.x.signum();
-        let flight_time = diff.x / velocity_x;
-        let velocity_y = diff.y / flight_time + GRAVITY_ACCELERATION * flight_time.powi(2) / 2.0;
+        let relative_velocity_x = velocity_x - target_velocity.linvel.x;
+        // TODO: this doesn't work when the target runs away faster than the arrow
+        let flight_time = diff.x / relative_velocity_x;
+        // TODO: this doesn't take vertical velocity into account for prediction
+        let velocity_y = diff.y / flight_time + GRAVITY_ACCELERATION * flight_time / 2.0;
+
         bow.timer.reset();
+
         commands.spawn((
             Name::new("Arrow"),
             SpriteBundle {

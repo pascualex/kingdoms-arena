@@ -39,7 +39,7 @@ fn setup(mut commands: Commands) {
             ..default()
         },
         Kingdom::Human,
-        Spawner::new("Human", palette::LIGHT_PINK, Vec2::new(1.1, 1.8), 1.0, 12.0),
+        Spawner::new("Human", palette::LIGHT_PINK, Vec2::new(1.1, 1.8), 1.5, 12.0),
     ));
     commands.spawn((
         Name::new("Monster spawner"),
@@ -58,7 +58,7 @@ fn setup(mut commands: Commands) {
             "Monster",
             palette::DARK_BLACK,
             Vec2::new(1.0, 1.4),
-            2.0,
+            2.5,
             2.0,
         ),
     ));
@@ -177,7 +177,7 @@ fn tick_spawners(
 fn check_traps(
     trap_query: Query<(Entity, &Kingdom), With<Trap>>,
     trigger_query: Query<&Kingdom, With<Subject>>,
-    mut subject_query: Query<(&Kingdom, &mut Health), With<Subject>>,
+    mut health_query: Query<(&Kingdom, &mut Health), With<Subject>>,
     context: Res<RapierContext>,
 ) {
     for (trap_entity, trap_kingdom) in &trap_query {
@@ -188,7 +188,7 @@ fn check_traps(
             if trigger_kingdom == trap_kingdom {
                 continue;
             }
-            for (subject_kingdom, mut health) in &mut subject_query {
+            for (subject_kingdom, mut health) in &mut health_query {
                 if subject_kingdom == trigger_kingdom {
                     health.kill();
                 }
