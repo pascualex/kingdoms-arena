@@ -63,9 +63,9 @@ fn setup(mut commands: Commands) {
             2.0,
         ),
     ));
-    // wipeout traps
+    // traps
     commands.spawn((
-        Name::new("Human wipe out trap"),
+        Name::new("Human trap"),
         SpriteBundle {
             sprite: Sprite {
                 color: Color::rgba(0.1, 0.1, 0.1, 0.1),
@@ -80,7 +80,7 @@ fn setup(mut commands: Commands) {
         Trap,
     ));
     commands.spawn((
-        Name::new("Monster wipe out trap"),
+        Name::new("Monster trap"),
         SpriteBundle {
             sprite: Sprite {
                 color: Color::rgba(0.1, 0.1, 0.1, 0.1),
