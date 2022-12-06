@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_kira_audio::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use crate::{
@@ -92,6 +93,8 @@ fn shoot_subject_bows(
     mut bow_query: Query<(&Transform, &Kingdom, &mut Bow), (With<Subject>, With<ShootingState>)>,
     target_query: Query<(&Transform, &Velocity), With<Subject>>,
     frontlines: Res<Frontlines>,
+    audio: Res<Audio>,
+    asset_server: Res<AssetServer>,
     mut commands: Commands,
 ) {
     for (bow_transform, kingdom, mut bow) in &mut bow_query {
@@ -106,7 +109,9 @@ fn shoot_subject_bows(
         let Some(target_entity) = target_entity else {
             continue;
         };
-        let (target_transform, target_velocity) = target_query.get(target_entity).unwrap();
+        let Ok((target_transform, target_velocity)) = target_query.get(target_entity) else {
+            continue;
+        };
 
         let diff = target_transform.translation - bow_transform.translation;
         let velocity_x = 10.0 * diff.x.signum();
@@ -136,6 +141,9 @@ fn shoot_subject_bows(
             kingdom.clone(),
             Arrow,
         ));
+
+        let sound = asset_server.load("sounds/bow_shot.ogg");
+        audio.play(sound).with_volume(0.5);
     }
 }
 
