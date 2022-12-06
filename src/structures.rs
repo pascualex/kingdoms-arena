@@ -162,7 +162,7 @@ fn tick_spawners(
                 kingdom.clone(),
                 Subject,
                 Health::new(1),
-                Speed::new(spawner.speed),
+                Speed(spawner.speed),
                 MovingState,
             ));
             match kingdom {

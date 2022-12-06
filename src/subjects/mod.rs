@@ -76,16 +76,8 @@ impl Health {
     }
 }
 
-#[derive(Component)]
-pub struct Speed {
-    value: f32,
-}
-
-impl Speed {
-    pub fn new(value: f32) -> Self {
-        Self { value }
-    }
-}
+#[derive(Component, Deref, DerefMut)]
+pub struct Speed(pub f32);
 
 pub fn despawn_dead_subjects(
     query: Query<(Entity, &Health), With<Subject>>,
@@ -104,8 +96,8 @@ fn set_subject_velocities(
     for (mut velocity, kingdom, speed, moving_state) in &mut query {
         velocity.linvel.x = match moving_state {
             Some(_) => match kingdom {
-                Kingdom::Human => speed.value,
-                Kingdom::Monster => -speed.value,
+                Kingdom::Human => **speed,
+                Kingdom::Monster => -**speed,
             },
             None => 0.0,
         };
