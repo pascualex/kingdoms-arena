@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use bevy::{prelude::*, sprite::Anchor, time::Stopwatch};
+use bevy_kira_audio::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use crate::{
@@ -132,6 +133,8 @@ struct Trap;
 fn tick_spawners(
     mut query: Query<(&Transform, &Kingdom, &mut Spawner)>,
     time: Res<Time>,
+    audio: Res<Audio>,
+    asset_server: Res<AssetServer>,
     mut commands: Commands,
 ) {
     for (transform, kingdom, mut spawner) in &mut query {
@@ -173,6 +176,11 @@ fn tick_spawners(
                     spawn_commands.insert(Sword);
                 }
             }
+            let sound = match kingdom {
+                Kingdom::Human => asset_server.load("sounds/human_spawn.wav"),
+                Kingdom::Monster => asset_server.load("sounds/monster_spawn.wav"),
+            };
+            audio.play(sound).with_volume(0.1);
         }
     }
 }
@@ -182,20 +190,27 @@ fn check_traps(
     trigger_query: Query<&Kingdom, With<Subject>>,
     mut health_query: Query<(&Kingdom, &mut Health), With<Subject>>,
     context: Res<RapierContext>,
+    audio: Res<Audio>,
+    asset_server: Res<AssetServer>,
 ) {
     for (trap_entity, trap_kingdom) in &trap_query {
         for trigger_entity in intersections_with(trap_entity, &context) {
             let Ok(trigger_kingdom) = trigger_query.get(trigger_entity) else {
                 continue;
             };
+
             if trigger_kingdom == trap_kingdom {
                 continue;
             }
+
             for (subject_kingdom, mut health) in &mut health_query {
                 if subject_kingdom == trigger_kingdom {
                     health.kill();
                 }
             }
+
+            let sound = asset_server.load("sounds/wipe_out.wav");
+            audio.play(sound).with_volume(0.5);
         }
     }
 }
