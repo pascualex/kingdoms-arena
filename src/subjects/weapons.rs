@@ -70,14 +70,20 @@ fn swing_subject_swords(
     sword_query: Query<(Entity, &Kingdom), (With<Subject>, With<Sword>)>,
     mut health_query: Query<(&Kingdom, &mut Health), With<Subject>>,
     context: Res<RapierContext>,
+    audio: Res<Audio>,
+    asset_server: Res<AssetServer>,
 ) {
     for (sword_entity, sword_kingdom) in &sword_query {
         for health_entity in intersections_with(sword_entity, &context) {
             let Ok((health_kingdom, mut health)) = health_query.get_mut(health_entity) else {
                 continue;
             };
+
             if health_kingdom != sword_kingdom {
                 health.damage(1);
+
+                let sound = asset_server.load("sounds/human_death.wav");
+                audio.play(sound).with_volume(0.2);
             }
         }
     }
@@ -142,7 +148,7 @@ fn shoot_subject_bows(
             Arrow,
         ));
 
-        let sound = asset_server.load("sounds/bow_shot.ogg");
+        let sound = asset_server.load("sounds/bow_shot.wav");
         audio.play(sound).with_volume(0.5);
     }
 }
@@ -157,22 +163,35 @@ fn collide_arrows(
     mut arrow_query: Query<(Entity, &mut Transform, &mut Velocity, &Kingdom), With<Arrow>>,
     mut subject_query: Query<(&Kingdom, &mut Health), With<Subject>>,
     context: Res<RapierContext>,
+    audio: Res<Audio>,
+    asset_server: Res<AssetServer>,
     mut commands: Commands,
 ) {
     for (arrow_entity, mut transform, mut velocity, arrow_kingdom) in &mut arrow_query {
         if transform.translation.y <= 0.0 {
             transform.translation.y = 0.0;
             velocity.linvel = Vec2::ZERO;
+
             commands.entity(arrow_entity).remove::<Arrow>();
+
+            let sound = asset_server.load("sounds/arrow_ground_hit.wav");
+            audio.play(sound).with_volume(0.15);
+
             continue;
         }
+
         for subject_entity in intersections_with(arrow_entity, &context) {
             let Ok((subject_kingdom, mut health)) = subject_query.get_mut(subject_entity) else {
                 continue;
             };
+
             if !health.is_dead() && subject_kingdom != arrow_kingdom {
                 health.damage(1);
                 commands.entity(arrow_entity).despawn_recursive();
+
+                let sound = asset_server.load("sounds/monster_death.wav");
+                audio.play(sound).with_volume(0.2);
+
                 break;
             }
         }

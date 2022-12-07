@@ -12,6 +12,6 @@ opt-level = 3
 [dependencies]
 bevy = { version = "0.9", default-features = false, features = ["animation", "bevy_asset", "bevy_gilrs", "bevy_scene", "bevy_winit", "render", "png", "hdr", "x11", "filesystem_watcher"] }
 bevy-inspector-egui = "0.14"
-bevy_kira_audio = "0.13.0"
+bevy_kira_audio = { version = "0.13.0", features = ["wav"] }
 bevy_rapier2d = { version = "0.19", features = ["debug-render"] }
 fastrand = "1.8"
