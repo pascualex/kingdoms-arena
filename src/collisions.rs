@@ -3,19 +3,18 @@ use bevy_rapier2d::prelude::*;
 
 #[derive(Bundle)]
 pub struct ColliderBundle {
-    rigid_body: RigidBody,
     collider: Collider,
     sensor: Sensor,
     active_collision_types: ActiveCollisionTypes,
 }
 
 impl ColliderBundle {
-    pub fn kinematic(collider: Collider) -> Self {
+    pub fn new(collider: Collider) -> Self {
         Self {
-            rigid_body: RigidBody::KinematicVelocityBased,
             collider,
             sensor: Sensor,
-            active_collision_types: ActiveCollisionTypes::KINEMATIC_KINEMATIC,
+            active_collision_types: ActiveCollisionTypes::KINEMATIC_KINEMATIC
+                | ActiveCollisionTypes::KINEMATIC_STATIC,
         }
     }
 }

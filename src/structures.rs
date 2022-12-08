@@ -1,18 +1,21 @@
 use std::time::Duration;
 
-use bevy::{prelude::*, sprite::Anchor, time::Stopwatch};
+use bevy::{
+    prelude::*,
+    sprite::{Anchor, TextureAtlas},
+    time::Stopwatch,
+};
 use bevy_kira_audio::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use crate::{
     collisions::{intersections_with, ColliderBundle},
-    palette,
     subjects::{
         states::MovingState,
         weapons::{Bow, Sword},
-        Health, Speed, Subject,
+        AnimationIndices, AnimationTimer, Health, Speed, Subject,
     },
-    Kingdom, WORLD_EXTENSION, WORLD_HEIGHT,
+    Kingdom, PX_PER_METER, WORLD_EXTENSION, WORLD_HEIGHT,
 };
 
 pub struct StructuresPlugin;
@@ -40,7 +43,7 @@ fn setup(mut commands: Commands) {
             ..default()
         },
         Kingdom::Human,
-        Spawner::new("Human", palette::LIGHT_PINK, Vec2::new(1.1, 1.8), 1.5, 12.0),
+        Spawner::new("Human", Vec2::new(1.1, 1.8), 1.5, 12.0),
     ));
     commands.spawn((
         Name::new("Monster spawner"),
@@ -55,13 +58,7 @@ fn setup(mut commands: Commands) {
             ..default()
         },
         Kingdom::Monster,
-        Spawner::new(
-            "Monster",
-            palette::DARK_BLACK,
-            Vec2::new(1.0, 1.4),
-            2.5,
-            2.0,
-        ),
+        Spawner::new("Monster", Vec2::new(1.0, 1.4), 2.5, 2.0),
     ));
     // traps
     commands.spawn((
@@ -75,7 +72,8 @@ fn setup(mut commands: Commands) {
             transform: Transform::from_xyz(-WORLD_EXTENSION + 6.0, WORLD_HEIGHT / 2.0, 0.0),
             ..default()
         },
-        ColliderBundle::kinematic(Collider::cuboid(5.0, WORLD_HEIGHT / 2.0)),
+        RigidBody::Fixed,
+        ColliderBundle::new(Collider::cuboid(5.0, WORLD_HEIGHT / 2.0)),
         Kingdom::Human,
         Trap,
     ));
@@ -90,7 +88,8 @@ fn setup(mut commands: Commands) {
             transform: Transform::from_xyz(WORLD_EXTENSION - 6.0, WORLD_HEIGHT / 2.0, 0.0),
             ..default()
         },
-        ColliderBundle::kinematic(Collider::cuboid(5.0, WORLD_HEIGHT / 2.0)),
+        RigidBody::Fixed,
+        ColliderBundle::new(Collider::cuboid(5.0, WORLD_HEIGHT / 2.0)),
         Kingdom::Monster,
         Trap,
     ));
@@ -99,7 +98,6 @@ fn setup(mut commands: Commands) {
 #[derive(Component)]
 struct Spawner {
     name: String,
-    color: Color,
     size: Vec2,
     speed: f32,
     stopwatch: Stopwatch,
@@ -108,16 +106,9 @@ struct Spawner {
 }
 
 impl Spawner {
-    fn new(
-        name: impl Into<String>,
-        color: Color,
-        size: Vec2,
-        speed: f32,
-        interval_seconds: f32,
-    ) -> Self {
+    fn new(name: impl Into<String>, size: Vec2, speed: f32, interval_seconds: f32) -> Self {
         Self {
             name: name.into(),
-            color,
             size,
             speed,
             stopwatch: Stopwatch::new(),
@@ -135,47 +126,72 @@ fn tick_spawners(
     time: Res<Time>,
     audio: Res<Audio>,
     asset_server: Res<AssetServer>,
+    mut textures_atlases: ResMut<Assets<TextureAtlas>>,
     mut commands: Commands,
 ) {
     for (transform, kingdom, mut spawner) in &mut query {
         spawner.stopwatch.tick(time.delta());
+
         while spawner.stopwatch.elapsed() >= spawner.next_interval {
             let remaining = spawner.stopwatch.elapsed() - spawner.next_interval;
             spawner.stopwatch.set_elapsed(remaining);
+
             let random_offset = 0.5 + fastrand::f32();
             spawner.next_interval = spawner.average_interval.mul_f32(random_offset);
-            let mut spawn_commands = commands.spawn((
+
+            let root = (
                 Name::new(spawner.name.clone()),
-                SpriteBundle {
-                    sprite: Sprite {
-                        color: spawner.color,
-                        custom_size: Some(spawner.size),
-                        ..default()
-                    },
-                    transform: Transform::from_translation(
-                        transform.translation + Vec3::new(0.0, spawner.size.y / 2.0, 0.0),
-                    ),
-                    ..default()
-                },
-                ColliderBundle::kinematic(Collider::cuboid(
-                    spawner.size.x / 2.0,
-                    spawner.size.y / 2.0,
+                SpatialBundle::from_transform(Transform::from_translation(
+                    transform.translation + Vec3::new(0.0, spawner.size.y / 2.0, 0.0),
                 )),
+                RigidBody::KinematicVelocityBased,
+                ColliderBundle::new(Collider::cuboid(spawner.size.x / 2.0, spawner.size.y / 2.0)),
                 Velocity::zero(),
                 kingdom.clone(),
                 Subject,
                 Health::new(1),
                 Speed(spawner.speed),
                 MovingState,
-            ));
+            );
+
+            let texture = asset_server.load("sprites/archer.png");
+            let texture_atlas =
+                TextureAtlas::from_grid(texture, Vec2::new(20.0, 20.0), 9, 5, None, None);
+            let animation_indices = AnimationIndices::new(9, 4);
+
+            let sprite = (
+                SpriteSheetBundle {
+                    texture_atlas: textures_atlases.add(texture_atlas),
+                    sprite: TextureAtlasSprite {
+                        index: animation_indices.first,
+                        anchor: Anchor::BottomCenter,
+                        ..default()
+                    },
+                    transform: Transform {
+                        translation: Vec3::new(0.0, -spawner.size.y / 2.0, 0.0),
+                        scale: Vec3::splat(1.0 / PX_PER_METER),
+                        ..default()
+                    },
+                    ..default()
+                },
+                animation_indices,
+                AnimationTimer::new(0.4),
+            );
+
+            let mut root_commands = commands.spawn(root);
+            root_commands.with_children(|builder| {
+                builder.spawn(sprite);
+            });
+
             match kingdom {
                 Kingdom::Human => {
-                    spawn_commands.insert(Bow::new(3.0));
+                    root_commands.insert(Bow::new(3.0));
                 }
                 Kingdom::Monster => {
-                    spawn_commands.insert(Sword);
+                    root_commands.insert(Sword);
                 }
             }
+
             let sound = match kingdom {
                 Kingdom::Human => asset_server.load("sounds/human_spawn.wav"),
                 Kingdom::Monster => asset_server.load("sounds/monster_spawn.wav"),

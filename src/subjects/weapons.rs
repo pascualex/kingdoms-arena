@@ -138,10 +138,13 @@ fn shoot_subject_bows(
                     custom_size: Some(Vec2::new(0.1, 0.1)),
                     ..default()
                 },
-                transform: Transform::from_translation(bow_transform.translation),
+                transform: Transform::from_translation(
+                    bow_transform.translation + Vec3::new(0.0, 1.0, 0.0),
+                ),
                 ..default()
             },
-            ColliderBundle::kinematic(Collider::cuboid(0.05, 0.05)),
+            RigidBody::KinematicVelocityBased,
+            ColliderBundle::new(Collider::cuboid(0.05, 0.05)),
             Velocity::linear(Vec2::new(velocity_x, velocity_y)),
             Lifetime::new(20.0),
             kingdom.clone(),

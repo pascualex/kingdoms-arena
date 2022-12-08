@@ -15,9 +15,10 @@ use self::{structures::StructuresPlugin, subjects::SubjectsPlugin};
 const WORLD_HEIGHT: f32 = 14.0;
 const WORLD_EXTENSION: f32 = 20.0;
 const GROUND_HEIGHT: f32 = 7.0;
+const GRAVITY_ACCELERATION: f32 = 9.8;
 const CAMERA_HEIGHT: f32 = (WORLD_HEIGHT - GROUND_HEIGHT) / 2.0;
 const CAMERA_SIZE: f32 = WORLD_HEIGHT + GROUND_HEIGHT;
-const GRAVITY_ACCELERATION: f32 = 9.8;
+const PX_PER_METER: f32 = 10.0;
 
 pub struct AppPlugin;
 
