@@ -165,6 +165,7 @@ fn tick_spawners(
                     sprite: TextureAtlasSprite {
                         index: animation_indices.first,
                         anchor: Anchor::BottomCenter,
+                        flip_x: matches!(kingdom, Kingdom::Monster),
                         ..default()
                     },
                     transform: Transform {
@@ -175,7 +176,7 @@ fn tick_spawners(
                     ..default()
                 },
                 animation_indices,
-                AnimationTimer::new(0.4),
+                AnimationTimer::new(0.3),
             );
 
             let mut root_commands = commands.spawn(root);
