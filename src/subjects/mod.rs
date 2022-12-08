@@ -18,6 +18,7 @@ impl Plugin for SubjectsPlugin {
         app.add_plugin(SubjectStatesPlugin)
             .add_plugin(WeaponsPlugin)
             .init_resource::<Frontlines>()
+            .add_system(animate_sprite)
             .add_system(set_subject_velocities.after(UpdateSubjectState))
             .add_system(update_frontlines)
             .add_system(despawn_dead_subjects);
@@ -78,6 +79,43 @@ impl Health {
 
 #[derive(Component, Deref, DerefMut)]
 pub struct Speed(pub f32);
+
+#[derive(Component)]
+pub struct AnimationIndices {
+    pub first: usize,
+    pub length: usize,
+}
+
+impl AnimationIndices {
+    pub fn new(first: usize, length: usize) -> Self {
+        Self { first, length }
+    }
+}
+
+#[derive(Component, Deref, DerefMut)]
+pub struct AnimationTimer(Timer);
+
+impl AnimationTimer {
+    pub fn new(interval_seconds: f32) -> Self {
+        Self(Timer::from_seconds(interval_seconds, TimerMode::Repeating))
+    }
+}
+
+fn animate_sprite(
+    time: Res<Time>,
+    mut query: Query<(
+        &AnimationIndices,
+        &mut AnimationTimer,
+        &mut TextureAtlasSprite,
+    )>,
+) {
+    for (indices, mut timer, mut sprite) in &mut query {
+        timer.tick(time.delta());
+        let index = sprite.index - indices.first;
+        let new_index = (index + timer.times_finished_this_tick() as usize) % indices.length;
+        sprite.index = new_index + indices.first;
+    }
+}
 
 pub fn despawn_dead_subjects(
     query: Query<(Entity, &Health), With<Subject>>,
