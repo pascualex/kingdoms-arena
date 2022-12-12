@@ -138,9 +138,7 @@ fn shoot_subject_bows(
                     custom_size: Some(Vec2::new(0.1, 0.1)),
                     ..default()
                 },
-                transform: Transform::from_translation(
-                    bow_transform.translation + Vec3::new(0.0, 1.0, 0.0),
-                ),
+                transform: Transform::from_translation(bow_transform.translation),
                 ..default()
             },
             RigidBody::KinematicVelocityBased,
