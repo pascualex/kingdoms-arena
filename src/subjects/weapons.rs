@@ -120,7 +120,9 @@ fn shoot_subject_bows(
         };
 
         let diff = target_transform.translation - bow_transform.translation;
-        let velocity_x = 10.0 * diff.x.signum();
+        let random_offset = 0.85 + 0.3 * fastrand::f32();
+        let speed = 10.0 * random_offset;
+        let velocity_x = speed * diff.x.signum();
         let relative_velocity_x = velocity_x - target_velocity.linvel.x;
         let random_offset = 0.75 + 0.75 * fastrand::f32();
         // TODO: this doesn't work when the target runs away faster than the arrow
