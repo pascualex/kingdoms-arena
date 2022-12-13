@@ -13,7 +13,7 @@ use crate::{
     subjects::{
         states::MovingState,
         weapons::{Bow, Sword},
-        AnimationIndices, AnimationTimer, Health, Speed, Subject,
+        AnimationIndices, AnimationTimer, Health, Speed, Subject, Visuals,
     },
     Kingdom, PX_PER_METER, WORLD_EXTENSION, WORLD_HEIGHT,
 };
@@ -139,27 +139,12 @@ fn tick_spawners(
             let random_offset = 0.5 + fastrand::f32();
             spawner.next_interval = spawner.average_interval.mul_f32(random_offset);
 
-            let root = (
-                Name::new(spawner.name.clone()),
-                SpatialBundle::from_transform(Transform::from_translation(
-                    transform.translation + Vec3::new(0.0, spawner.size.y / 2.0, 0.0),
-                )),
-                RigidBody::KinematicVelocityBased,
-                ColliderBundle::new(Collider::cuboid(spawner.size.x / 2.0, spawner.size.y / 2.0)),
-                Velocity::zero(),
-                kingdom.clone(),
-                Subject,
-                Health::new(1),
-                Speed(spawner.speed),
-                MovingState,
-            );
-
             let texture = asset_server.load("sprites/archer.png");
             let texture_atlas =
                 TextureAtlas::from_grid(texture, Vec2::new(20.0, 20.0), 9, 5, None, None);
             let animation_indices = AnimationIndices::new(9, 4);
 
-            let sprite = (
+            let sprite_commands = commands.spawn((
                 SpriteSheetBundle {
                     texture_atlas: textures_atlases.add(texture_atlas),
                     sprite: TextureAtlasSprite {
@@ -177,12 +162,24 @@ fn tick_spawners(
                 },
                 animation_indices,
                 AnimationTimer::new(0.3),
-            );
+            ));
+            let sprite_entity = sprite_commands.id();
 
-            let mut root_commands = commands.spawn(root);
-            root_commands.with_children(|builder| {
-                builder.spawn(sprite);
-            });
+            let mut root_commands = commands.spawn((
+                Name::new(spawner.name.clone()),
+                SpatialBundle::from_transform(Transform::from_translation(
+                    transform.translation + Vec3::new(0.0, spawner.size.y / 2.0, 0.0),
+                )),
+                RigidBody::KinematicVelocityBased,
+                ColliderBundle::new(Collider::cuboid(spawner.size.x / 2.0, spawner.size.y / 2.0)),
+                Visuals(sprite_entity),
+                Velocity::zero(),
+                kingdom.clone(),
+                Subject,
+                Health::new(1),
+                Speed(spawner.speed),
+                MovingState,
+            ));
 
             match kingdom {
                 Kingdom::Human => {
@@ -192,6 +189,8 @@ fn tick_spawners(
                     root_commands.insert(Sword);
                 }
             }
+
+            root_commands.push_children(&[sprite_entity]);
 
             let sound = match kingdom {
                 Kingdom::Human => asset_server.load("sounds/human_spawn.wav"),
