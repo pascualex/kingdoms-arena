@@ -80,6 +80,9 @@ impl Health {
 #[derive(Component, Deref, DerefMut)]
 pub struct Speed(pub f32);
 
+#[derive(Component, Deref, DerefMut)]
+pub struct Visuals(pub Entity);
+
 #[derive(Component)]
 pub struct AnimationIndices {
     pub first: usize,
@@ -89,6 +92,11 @@ pub struct AnimationIndices {
 impl AnimationIndices {
     pub fn new(first: usize, length: usize) -> Self {
         Self { first, length }
+    }
+
+    pub fn set(&mut self, first: usize, length: usize) {
+        self.first = first;
+        self.length = length;
     }
 }
 
