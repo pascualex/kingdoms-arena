@@ -1,14 +1,20 @@
+pub mod content;
 pub mod states;
 pub mod weapons;
 
-use bevy::prelude::*;
-use bevy_rapier2d::prelude::Velocity;
+use bevy::{prelude::*, sprite::Anchor};
+use bevy_rapier2d::prelude::*;
 
-use crate::Kingdom;
+use crate::{
+    animation::{Animation, AnimationMode, AnimationPlayer},
+    collision::ColliderBundle,
+    Kingdom, PX_PER_METER,
+};
 
 use self::{
+    content::SubjectBlueprint,
     states::{MovingState, ShootingState, SubjectStatesPlugin, UpdateSubjectState},
-    weapons::WeaponsPlugin,
+    weapons::{Bow, Sword, WeaponsPlugin},
 };
 
 pub struct SubjectsPlugin;
@@ -18,7 +24,6 @@ impl Plugin for SubjectsPlugin {
         app.add_plugin(SubjectStatesPlugin)
             .add_plugin(WeaponsPlugin)
             .init_resource::<Frontlines>()
-            .add_system(animate_sprite)
             .add_system(set_subject_velocities.after(UpdateSubjectState))
             .add_system(update_frontlines)
             .add_system(despawn_dead_subjects);
@@ -80,49 +85,10 @@ impl Health {
 #[derive(Component, Deref, DerefMut)]
 pub struct Speed(pub f32);
 
-#[derive(Component, Deref, DerefMut)]
-pub struct Visuals(pub Entity);
-
-#[derive(Component)]
-pub struct AnimationIndices {
-    pub first: usize,
-    pub length: usize,
-}
-
-impl AnimationIndices {
-    pub fn new(first: usize, length: usize) -> Self {
-        Self { first, length }
-    }
-
-    pub fn set(&mut self, first: usize, length: usize) {
-        self.first = first;
-        self.length = length;
-    }
-}
-
-#[derive(Component, Deref, DerefMut)]
-pub struct AnimationTimer(Timer);
-
-impl AnimationTimer {
-    pub fn new(interval_seconds: f32) -> Self {
-        Self(Timer::from_seconds(interval_seconds, TimerMode::Repeating))
-    }
-}
-
-fn animate_sprite(
-    time: Res<Time>,
-    mut query: Query<(
-        &AnimationIndices,
-        &mut AnimationTimer,
-        &mut TextureAtlasSprite,
-    )>,
-) {
-    for (indices, mut timer, mut sprite) in &mut query {
-        timer.tick(time.delta());
-        let index = sprite.index - indices.first;
-        let new_index = (index + timer.times_finished_this_tick() as usize) % indices.length;
-        sprite.index = new_index + indices.first;
-    }
+#[derive(Component, Clone)]
+pub struct SubjectAnimations {
+    moving: Animation,
+    shooting: Animation,
 }
 
 pub fn despawn_dead_subjects(
@@ -176,4 +142,65 @@ fn update_frontlines(
             }
         }
     }
+}
+
+pub fn spawn_subject(
+    blueprint: &SubjectBlueprint,
+    position: Vec3,
+    kingdom: Kingdom,
+    asset_server: &AssetServer,
+    texture_atlases: &mut Assets<TextureAtlas>,
+    commands: &mut Commands,
+) {
+    let texture = asset_server.load("sprites/archer.png");
+    let texture_atlas = TextureAtlas::from_grid(texture, Vec2::new(20.0, 20.0), 9, 5, None, None);
+    let animation = &blueprint.animations.moving;
+
+    let sprite = SpriteSheetBundle {
+        texture_atlas: texture_atlases.add(texture_atlas),
+        sprite: TextureAtlasSprite {
+            index: animation.start_index,
+            anchor: Anchor::BottomCenter,
+            flip_x: matches!(kingdom, Kingdom::Monster),
+            ..default()
+        },
+        transform: Transform {
+            translation: Vec3::new(0.0, -blueprint.size.y / 2.0, 0.0),
+            scale: Vec3::splat(1.0 / PX_PER_METER),
+            ..default()
+        },
+        ..default()
+    };
+    let sprite_entity = commands.spawn(sprite).id();
+
+    let mut root_commands = commands.spawn((
+        Name::new(blueprint.name),
+        SpatialBundle::from_transform(Transform::from_translation(
+            position + Vec3::new(0.0, blueprint.size.y / 2.0, 0.0),
+        )),
+        AnimationPlayer::new(sprite_entity, animation, AnimationMode::Repeating),
+        RigidBody::KinematicVelocityBased,
+        ColliderBundle::new(Collider::cuboid(
+            blueprint.size.x / 2.0,
+            blueprint.size.y / 2.0,
+        )),
+        Velocity::zero(),
+        kingdom,
+        Subject,
+        Health::new(1),
+        Speed(blueprint.speed),
+        blueprint.animations.clone(),
+        MovingState,
+    ));
+
+    match kingdom {
+        Kingdom::Human => {
+            root_commands.insert(Bow::new(3.0));
+        }
+        Kingdom::Monster => {
+            root_commands.insert(Sword);
+        }
+    }
+
+    root_commands.push_children(&[sprite_entity]);
 }

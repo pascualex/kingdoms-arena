@@ -3,7 +3,7 @@ use bevy_kira_audio::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use crate::{
-    collisions::{intersections_with, ColliderBundle},
+    collision::{intersections_with, ColliderBundle},
     palette,
     subjects::{
         despawn_dead_subjects, states::UpdateSubjectState, Frontlines, Health, ShootingState,
@@ -147,7 +147,7 @@ fn shoot_subject_bows(
             ColliderBundle::new(Collider::cuboid(0.05, 0.05)),
             Velocity::linear(Vec2::new(velocity_x, velocity_y)),
             Lifetime::new(20.0),
-            kingdom.clone(),
+            *kingdom,
             Arrow,
         ));
 
