@@ -1,7 +1,8 @@
 use bevy::prelude::*;
 
 use crate::{
-    subjects::{AnimationIndices, Frontlines, Subject, Visuals},
+    animation::{AnimationMode, AnimationPlayer},
+    subjects::{Frontlines, Subject, SubjectAnimations},
     Kingdom,
 };
 
@@ -23,23 +24,29 @@ pub struct MovingState;
 
 #[derive(Component)]
 #[component(storage = "SparseSet")]
+pub struct RecharginState;
+
+#[derive(Component)]
+#[component(storage = "SparseSet")]
 pub struct ShootingState;
 
 fn transition_to_moving(
-    subject_query: Query<
-        (Entity, &Transform, &Visuals, &Kingdom),
+    mut subject_query: Query<
+        (
+            Entity,
+            &Transform,
+            &mut AnimationPlayer,
+            &Kingdom,
+            &SubjectAnimations,
+        ),
         (With<Subject>, With<ShootingState>),
     >,
-    mut visuals_query: Query<(&mut TextureAtlasSprite, &mut AnimationIndices)>,
     frontlines: Res<Frontlines>,
     mut commands: Commands,
 ) {
-    for (entity, transform, visuals, kingdom) in &subject_query {
+    for (entity, transform, mut player, kingdom, animations) in &mut subject_query {
         if !near_enemy_frontline(transform, kingdom, &frontlines) {
-            if let Ok((mut sprite, mut indices)) = visuals_query.get_mut(**visuals) {
-                indices.set(9, 4);
-                sprite.index = indices.first;
-            }
+            player.set(&animations.moving, AnimationMode::Repeating);
             commands
                 .entity(entity)
                 .insert(MovingState)
@@ -49,20 +56,22 @@ fn transition_to_moving(
 }
 
 fn transition_to_shooting(
-    subject_query: Query<
-        (Entity, &Transform, &Visuals, &Kingdom),
+    mut subject_query: Query<
+        (
+            Entity,
+            &Transform,
+            &mut AnimationPlayer,
+            &Kingdom,
+            &SubjectAnimations,
+        ),
         (With<Subject>, With<MovingState>),
     >,
-    mut visuals_query: Query<(&mut TextureAtlasSprite, &mut AnimationIndices)>,
     frontlines: Res<Frontlines>,
     mut commands: Commands,
 ) {
-    for (entity, transform, visuals, kingdom) in &subject_query {
+    for (entity, transform, mut player, kingdom, animations) in &mut subject_query {
         if near_enemy_frontline(transform, kingdom, &frontlines) {
-            if let Ok((mut sprite, mut indices)) = visuals_query.get_mut(**visuals) {
-                indices.set(0, 2);
-                sprite.index = indices.first;
-            }
+            player.set(&animations.shooting, AnimationMode::Repeating);
             commands
                 .entity(entity)
                 .insert(ShootingState)

@@ -1,6 +1,7 @@
 #![allow(clippy::type_complexity)]
 
-mod collisions;
+mod animation;
+mod collision;
 mod palette;
 mod structures;
 mod subjects;
@@ -10,9 +11,9 @@ use bevy::{
     sprite::Anchor,
 };
 
-use self::{structures::StructuresPlugin, subjects::SubjectsPlugin};
+use self::{animation::AnimationPlugin, structures::StructuresPlugin, subjects::SubjectsPlugin};
 
-const WORLD_HEIGHT: f32 = 14.0;
+const WORLD_HEIGHT: f32 = 13.0;
 const WORLD_EXTENSION: f32 = 20.0;
 const GROUND_HEIGHT: f32 = 7.0;
 const GRAVITY_ACCELERATION: f32 = 9.8;
@@ -24,7 +25,8 @@ pub struct AppPlugin;
 
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(StructuresPlugin)
+        app.add_plugin(AnimationPlugin)
+            .add_plugin(StructuresPlugin)
             .add_plugin(SubjectsPlugin)
             .add_state(AppState::Game)
             .add_startup_system(setup);
@@ -65,7 +67,7 @@ fn setup(mut commands: Commands) {
     ));
 }
 
-#[derive(Component, PartialEq, Eq, Clone)]
+#[derive(Component, PartialEq, Eq, Clone, Copy)]
 pub enum Kingdom {
     Human,
     Monster,
