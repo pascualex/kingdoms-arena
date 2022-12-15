@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use crate::{
     animation::{AnimationMode, AnimationPlayer},
     subjects::{Frontlines, Subject, SubjectAnimations},
+    weapons::{Bow, ShotEvent},
     Kingdom,
 };
 
@@ -38,14 +39,19 @@ fn transition_to_moving(
             &mut AnimationPlayer,
             &Kingdom,
             &SubjectAnimations,
+            &Bow,
         ),
         (With<Subject>, With<ShootingState>),
     >,
     frontlines: Res<Frontlines>,
+    mut events: EventWriter<ShotEvent>,
     mut commands: Commands,
 ) {
-    for (entity, transform, mut player, kingdom, animations) in &mut subject_query {
-        if !near_enemy_frontline(transform, kingdom, &frontlines) {
+    for (entity, transform, mut player, kingdom, animations, bow) in &mut subject_query {
+        if player.is_finished() || !frontline_in_range(transform, kingdom, bow, &frontlines) {
+            if player.is_finished() {
+                events.send(ShotEvent::new(entity));
+            }
             player.set(&animations.moving, AnimationMode::Repeating);
             commands
                 .entity(entity)
@@ -63,15 +69,16 @@ fn transition_to_shooting(
             &mut AnimationPlayer,
             &Kingdom,
             &SubjectAnimations,
+            &Bow,
         ),
         (With<Subject>, With<MovingState>),
     >,
     frontlines: Res<Frontlines>,
     mut commands: Commands,
 ) {
-    for (entity, transform, mut player, kingdom, animations) in &mut subject_query {
-        if near_enemy_frontline(transform, kingdom, &frontlines) {
-            player.set(&animations.shooting, AnimationMode::Repeating);
+    for (entity, transform, mut player, kingdom, animations, bow) in &mut subject_query {
+        if frontline_in_range(transform, kingdom, bow, &frontlines) {
+            player.set(&animations.shooting, AnimationMode::Once);
             commands
                 .entity(entity)
                 .insert(ShootingState)
@@ -80,9 +87,14 @@ fn transition_to_shooting(
     }
 }
 
-fn near_enemy_frontline(transform: &Transform, kingdom: &Kingdom, frontlines: &Frontlines) -> bool {
+fn frontline_in_range(
+    transform: &Transform,
+    kingdom: &Kingdom,
+    bow: &Bow,
+    frontlines: &Frontlines,
+) -> bool {
     match kingdom {
-        Kingdom::Human => (frontlines.monster.position - transform.translation.x) < 10.0,
-        Kingdom::Monster => false,
+        Kingdom::Human => (frontlines.monster.position - transform.translation.x) < bow.range,
+        Kingdom::Monster => (transform.translation.x - frontlines.human.position) < bow.range,
     }
 }

@@ -1,38 +1,37 @@
 use bevy::prelude::*;
 
-use crate::{animation::Animation, subjects::SubjectAnimations};
+use crate::{
+    animation::Animation,
+    subjects::SubjectAnimations,
+    weapons::content::{WeaponsBlueprint, ELVEN_BOW},
+};
 
 pub struct SubjectBlueprint {
     pub name: &'static str,
     pub size: Vec2,
     pub speed: f32,
-    pub weapon: WeaponType,
+    pub weapon: WeaponsBlueprint,
     pub animations: SubjectAnimations,
 }
 
-pub enum WeaponType {
-    Sword,
-    Bow,
-}
-
-pub const ARCHER: SubjectBlueprint = SubjectBlueprint {
-    name: "Archer",
-    size: Vec2::new(1.1, 1.8),
+pub const ELVEN_ARCHER: SubjectBlueprint = SubjectBlueprint {
+    name: "Elven archer",
+    size: Vec2::new(1.0, 1.625),
     speed: 1.5,
-    weapon: WeaponType::Bow,
+    weapon: WeaponsBlueprint::Bow(ELVEN_BOW),
     animations: SubjectAnimations {
         moving: Animation::new(9, 4, 0.3),
-        shooting: Animation::new(0, 2, 0.6),
+        shooting: Animation::new(18, 7, 0.1),
     },
 };
 
-pub const MONSTER: SubjectBlueprint = SubjectBlueprint {
-    name: "Monster",
+pub const GOBLIN_WARRIOR: SubjectBlueprint = SubjectBlueprint {
+    name: "Goblin warrior",
     size: Vec2::new(1.0, 1.4),
     speed: 2.5,
-    weapon: WeaponType::Sword,
+    weapon: WeaponsBlueprint::Sword,
     animations: SubjectAnimations {
         moving: Animation::new(9, 4, 0.3),
-        shooting: Animation::new(0, 2, 0.6),
+        shooting: Animation::new(0, 1, 1.0),
     },
 };

@@ -5,13 +5,17 @@ mod collision;
 mod palette;
 mod structures;
 mod subjects;
+mod weapons;
 
 use bevy::{
     core_pipeline::clear_color::ClearColorConfig, prelude::*, render::camera::ScalingMode,
     sprite::Anchor,
 };
 
-use self::{animation::AnimationPlugin, structures::StructuresPlugin, subjects::SubjectsPlugin};
+use self::{
+    animation::AnimationPlugin, structures::StructuresPlugin, subjects::SubjectsPlugin,
+    weapons::WeaponsPlugin,
+};
 
 const WORLD_HEIGHT: f32 = 13.0;
 const WORLD_EXTENSION: f32 = 20.0;
@@ -19,7 +23,7 @@ const GROUND_HEIGHT: f32 = 7.0;
 const GRAVITY_ACCELERATION: f32 = 9.8;
 const CAMERA_HEIGHT: f32 = (WORLD_HEIGHT - GROUND_HEIGHT) / 2.0;
 const CAMERA_SIZE: f32 = WORLD_HEIGHT + GROUND_HEIGHT;
-const PX_PER_METER: f32 = 10.0;
+const PX_PER_METER: f32 = 8.0;
 
 pub struct AppPlugin;
 
@@ -28,6 +32,7 @@ impl Plugin for AppPlugin {
         app.add_plugin(AnimationPlugin)
             .add_plugin(StructuresPlugin)
             .add_plugin(SubjectsPlugin)
+            .add_plugin(WeaponsPlugin)
             .add_state(AppState::Game)
             .add_startup_system(setup);
     }

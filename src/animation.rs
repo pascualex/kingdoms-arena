@@ -11,10 +11,11 @@ impl Plugin for AnimationPlugin {
 #[derive(Component)]
 pub struct AnimationPlayer {
     sprite_entity: Entity,
-    start_index: usize,
+    sheet_start_index: usize,
     length: usize,
-    timer: Timer,
     mode: AnimationMode,
+    timer: Timer,
+    index: usize,
     reset: bool,
 }
 
@@ -22,20 +23,26 @@ impl AnimationPlayer {
     pub fn new(sprite_entity: Entity, animation: &Animation, mode: AnimationMode) -> Self {
         Self {
             sprite_entity,
-            start_index: animation.start_index,
+            sheet_start_index: animation.start_index,
             length: animation.length,
-            timer: Timer::from_seconds(animation.interval_seconds, TimerMode::Repeating),
             mode,
+            timer: Timer::from_seconds(animation.interval_seconds, TimerMode::Repeating),
+            index: 0,
             reset: true,
         }
     }
 
     pub fn set(&mut self, animation: &Animation, mode: AnimationMode) {
-        self.start_index = animation.start_index;
+        self.sheet_start_index = animation.start_index;
         self.length = animation.length;
-        self.timer = Timer::from_seconds(animation.interval_seconds, TimerMode::Repeating);
         self.mode = mode;
+        self.timer = Timer::from_seconds(animation.interval_seconds, TimerMode::Repeating);
+        self.index = 0;
         self.reset = true;
+    }
+
+    pub fn is_finished(&self) -> bool {
+        matches!(self.mode, AnimationMode::Once) && self.index == (self.length - 1) && !self.reset
     }
 }
 
@@ -58,6 +65,7 @@ impl Animation {
 
 #[derive(Clone)]
 pub enum AnimationMode {
+    Once,
     Repeating,
 }
 
@@ -68,24 +76,18 @@ fn tick_animation_players(
 ) {
     for mut player in &mut player_query {
         player.timer.tick(time.delta());
-
-        if !player.reset && !player.timer.just_finished() {
-            continue;
-        }
-
-        let mut sprite = sprite_query.get_mut(player.sprite_entity).unwrap();
-
-        if player.reset {
-            sprite.index = player.start_index;
-            player.reset = false;
-        }
-
-        let index = sprite.index - player.start_index;
         let offset = player.timer.times_finished_this_tick() as usize;
         let new_index = match player.mode {
-            // AnimationMode::Once => usize::min(index + offset, player.length - 1),
-            AnimationMode::Repeating => (index + offset) % player.length,
+            AnimationMode::Once => usize::min(player.index + offset, player.length - 1),
+            AnimationMode::Repeating => (player.index + offset) % player.length,
         };
-        sprite.index = player.start_index + new_index;
+
+        if new_index != player.index || player.reset {
+            let mut sprite = sprite_query.get_mut(player.sprite_entity).unwrap();
+            sprite.index = player.sheet_start_index + new_index;
+
+            player.index = new_index;
+            player.reset = false;
+        }
     }
 }

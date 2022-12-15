@@ -11,7 +11,7 @@ use bevy_rapier2d::prelude::*;
 use crate::{
     collision::{intersections_with, ColliderBundle},
     subjects::{
-        content::{SubjectBlueprint, ARCHER, MONSTER},
+        content::{SubjectBlueprint, ELVEN_ARCHER, GOBLIN_WARRIOR},
         spawn_subject, Health, Subject,
     },
     Kingdom, WORLD_EXTENSION, WORLD_HEIGHT,
@@ -42,7 +42,7 @@ fn setup(mut commands: Commands) {
             ..default()
         },
         Kingdom::Human,
-        Spawner::new(ARCHER, 12.0),
+        Spawner::new(ELVEN_ARCHER, 12.0),
     ));
     commands.spawn((
         Name::new("Monster spawner"),
@@ -57,7 +57,7 @@ fn setup(mut commands: Commands) {
             ..default()
         },
         Kingdom::Monster,
-        Spawner::new(MONSTER, 2.0),
+        Spawner::new(GOBLIN_WARRIOR, 2.0),
     ));
     // traps
     commands.spawn((
@@ -96,16 +96,16 @@ fn setup(mut commands: Commands) {
 
 #[derive(Component)]
 struct Spawner {
-    blueprint: SubjectBlueprint,
+    subject_blueprint: SubjectBlueprint,
     stopwatch: Stopwatch,
     average_interval: Duration,
     next_interval: Duration,
 }
 
 impl Spawner {
-    fn new(blueprint: SubjectBlueprint, interval_seconds: f32) -> Self {
+    fn new(subject_blueprint: SubjectBlueprint, interval_seconds: f32) -> Self {
         Self {
-            blueprint,
+            subject_blueprint,
             stopwatch: Stopwatch::new(),
             average_interval: Duration::from_secs_f32(interval_seconds),
             next_interval: Duration::ZERO,
@@ -135,7 +135,7 @@ fn tick_spawners(
             spawner.next_interval = spawner.average_interval.mul_f32(random_offset);
 
             spawn_subject(
-                &spawner.blueprint,
+                &spawner.subject_blueprint,
                 transform.translation,
                 *kingdom,
                 &asset_server,

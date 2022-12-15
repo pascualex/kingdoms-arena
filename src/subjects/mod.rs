@@ -1,6 +1,5 @@
 pub mod content;
 pub mod states;
-pub mod weapons;
 
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_rapier2d::prelude::*;
@@ -8,13 +7,13 @@ use bevy_rapier2d::prelude::*;
 use crate::{
     animation::{Animation, AnimationMode, AnimationPlayer},
     collision::ColliderBundle,
+    weapons::{content::WeaponsBlueprint, Bow, Sword},
     Kingdom, PX_PER_METER,
 };
 
 use self::{
     content::SubjectBlueprint,
-    states::{MovingState, ShootingState, SubjectStatesPlugin, UpdateSubjectState},
-    weapons::{Bow, Sword, WeaponsPlugin},
+    states::{MovingState, SubjectStatesPlugin, UpdateSubjectState},
 };
 
 pub struct SubjectsPlugin;
@@ -22,7 +21,6 @@ pub struct SubjectsPlugin;
 impl Plugin for SubjectsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(SubjectStatesPlugin)
-            .add_plugin(WeaponsPlugin)
             .init_resource::<Frontlines>()
             .add_system(set_subject_velocities.after(UpdateSubjectState))
             .add_system(update_frontlines)
@@ -31,9 +29,9 @@ impl Plugin for SubjectsPlugin {
 }
 
 #[derive(Resource)]
-struct Frontlines {
-    human: Frontline,
-    monster: Frontline,
+pub struct Frontlines {
+    pub human: Frontline,
+    pub monster: Frontline,
 }
 
 impl Default for Frontlines {
@@ -51,9 +49,9 @@ impl Default for Frontlines {
     }
 }
 
-struct Frontline {
-    position: f32,
-    entity: Option<Entity>,
+pub struct Frontline {
+    pub position: f32,
+    pub entity: Option<Entity>,
 }
 
 #[derive(Component)]
@@ -153,7 +151,14 @@ pub fn spawn_subject(
     commands: &mut Commands,
 ) {
     let texture = asset_server.load("sprites/archer.png");
-    let texture_atlas = TextureAtlas::from_grid(texture, Vec2::new(20.0, 20.0), 9, 5, None, None);
+    let texture_atlas = TextureAtlas::from_grid(
+        texture,
+        Vec2::new(20.0, 19.0),
+        9,
+        5,
+        Some(Vec2::new(0.0, 1.0)),
+        Some(Vec2::new(0.0, 1.0)),
+    );
     let animation = &blueprint.animations.moving;
 
     let sprite = SpriteSheetBundle {
@@ -193,14 +198,10 @@ pub fn spawn_subject(
         MovingState,
     ));
 
-    match kingdom {
-        Kingdom::Human => {
-            root_commands.insert(Bow::new(3.0));
-        }
-        Kingdom::Monster => {
-            root_commands.insert(Sword);
-        }
-    }
+    match &blueprint.weapon {
+        WeaponsBlueprint::Sword => root_commands.insert(Sword),
+        WeaponsBlueprint::Bow(b) => root_commands.insert(Bow::new(b.range, b.fire_rate)),
+    };
 
     root_commands.push_children(&[sprite_entity]);
 }
