@@ -28,7 +28,7 @@ pub const ELVEN_ARCHER: SubjectBlueprint = SubjectBlueprint {
 
 pub const GOBLIN_WARRIOR: SubjectBlueprint = SubjectBlueprint {
     name: "Goblin warrior",
-    size: Vec2::new(1.0, 1.4),
+    size: Vec2::new(1.0, 1.375),
     speed: 2.5,
     weapon: WeaponsBlueprint::Sword,
     animations: SubjectAnimations {
