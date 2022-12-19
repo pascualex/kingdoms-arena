@@ -133,8 +133,8 @@ fn shoot_bows(
             continue;
         };
         let frontline_entity = match kingdom {
-            Kingdom::Human => frontlines.monster.entity,
-            Kingdom::Monster => frontlines.human.entity,
+            Kingdom::Elven => frontlines.monster.entity,
+            Kingdom::Monster => frontlines.elven.entity,
         };
         let Some(target_entity) = frontline_entity else {
             continue;
@@ -165,7 +165,7 @@ fn shoot_arrow(
     commands: &mut Commands,
 ) {
     let position = match kingdom {
-        Kingdom::Human => bow_position + Vec3::new(0.4, 0.0, 0.0),
+        Kingdom::Elven => bow_position + Vec3::new(0.4, 0.0, 0.0),
         Kingdom::Monster => bow_position + Vec3::new(-0.4, 0.0, 0.0),
     };
 

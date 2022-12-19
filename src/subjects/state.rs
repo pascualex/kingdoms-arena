@@ -144,7 +144,7 @@ fn frontline_in_range(
     frontlines: &Frontlines,
 ) -> bool {
     match kingdom {
-        Kingdom::Human => (frontlines.monster.position - transform.translation.x) < bow.range,
-        Kingdom::Monster => (transform.translation.x - frontlines.human.position) < bow.range,
+        Kingdom::Elven => (frontlines.monster.position - transform.translation.x) < bow.range,
+        Kingdom::Monster => (transform.translation.x - frontlines.elven.position) < bow.range,
     }
 }
