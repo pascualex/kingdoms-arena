@@ -13,8 +13,8 @@ fn main() {
             DefaultPlugins
                 .set(WindowPlugin {
                     window: WindowDescriptor {
-                        width: 1920.0,
-                        height: 1080.0,
+                        width: 1280.0,
+                        height: 720.0,
                         ..default()
                     },
                     ..default()
