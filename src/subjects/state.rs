@@ -10,9 +10,9 @@ use crate::{
 #[derive(SystemLabel)]
 pub struct UpdateSubjectState;
 
-pub struct SubjectStatesPlugin;
+pub struct SubjectStatePlugin;
 
-impl Plugin for SubjectStatesPlugin {
+impl Plugin for SubjectStatePlugin {
     fn build(&self, app: &mut App) {
         app.add_system(check_moving_transitions.label(UpdateSubjectState))
             .add_system(check_recharging_transitions.label(UpdateSubjectState))

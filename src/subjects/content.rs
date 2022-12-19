@@ -21,8 +21,8 @@ pub const ELVEN_ARCHER: SubjectBlueprint = SubjectBlueprint {
     weapon: WeaponsBlueprint::Bow(ELVEN_BOW),
     animations: SubjectAnimations {
         idle: Animation::new(0, 2, 0.6),
-        moving: Animation::new(9, 4, 0.3),
-        shooting: Animation::new(18, 7, 0.1),
+        moving: Animation::new(7, 4, 0.3),
+        shooting: Animation::new(14, 7, 0.1),
     },
 };
 
@@ -33,7 +33,7 @@ pub const GOBLIN_WARRIOR: SubjectBlueprint = SubjectBlueprint {
     weapon: WeaponsBlueprint::Sword,
     animations: SubjectAnimations {
         idle: Animation::new(0, 2, 0.6),
-        moving: Animation::new(9, 4, 0.3),
+        moving: Animation::new(7, 4, 0.3),
         shooting: Animation::new(0, 1, 1.0),
     },
 };

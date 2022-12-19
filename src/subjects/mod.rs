@@ -1,31 +1,61 @@
 pub mod content;
-pub mod states;
+pub mod state;
 
 use bevy::{prelude::*, sprite::Anchor};
+use bevy_kira_audio::AudioSource;
 use bevy_rapier2d::prelude::*;
 
 use crate::{
     animation::{Animation, AnimationMode, AnimationPlayer},
     collision::ColliderBundle,
     weapons::{content::WeaponsBlueprint, Bow, Sword},
-    Kingdom, PX_PER_METER,
+    Kingdom, KingdomHandle, PX_PER_METER,
 };
 
 use self::{
     content::SubjectBlueprint,
-    states::{MovingState, SubjectStatesPlugin, UpdateSubjectState},
+    state::{MovingState, SubjectStatePlugin, UpdateSubjectState},
 };
 
-pub struct SubjectsPlugin;
+pub struct SubjectPlugin;
 
-impl Plugin for SubjectsPlugin {
+impl Plugin for SubjectPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(SubjectStatesPlugin)
+        app.add_plugin(SubjectStatePlugin)
             .init_resource::<Frontlines>()
+            .add_startup_system(load_assets)
             .add_system(set_subject_velocities.after(UpdateSubjectState))
             .add_system(update_frontlines)
             .add_system(despawn_dead_subjects);
     }
+}
+
+fn load_assets(
+    asset_server: Res<AssetServer>,
+    mut atlases: ResMut<Assets<TextureAtlas>>,
+    mut commands: Commands,
+) {
+    let atlas = TextureAtlas::from_grid(
+        asset_server.load("sprites/archer.png"),
+        Vec2::new(20.0, 19.0),
+        7,
+        3,
+        Some(Vec2::new(0.0, 1.0)),
+        Some(Vec2::new(0.0, 1.0)),
+    );
+    commands.insert_resource(SubjectAssets {
+        atlas: atlases.add(atlas),
+        death_sound: KingdomHandle {
+            human: asset_server.load("sounds/human_death.wav"),
+            monster: asset_server.load("sounds/monster_death.wav"),
+        },
+    });
+}
+
+#[derive(Resource)]
+pub struct SubjectAssets {
+    pub atlas: Handle<TextureAtlas>,
+    pub death_sound: KingdomHandle<AudioSource>,
 }
 
 #[derive(Resource)]
@@ -147,23 +177,13 @@ pub fn spawn_subject(
     blueprint: &SubjectBlueprint,
     position: Vec3,
     kingdom: Kingdom,
-    asset_server: &AssetServer,
-    texture_atlases: &mut Assets<TextureAtlas>,
+    assets: &SubjectAssets,
     commands: &mut Commands,
 ) {
-    let texture = asset_server.load("sprites/archer.png");
-    let texture_atlas = TextureAtlas::from_grid(
-        texture,
-        Vec2::new(20.0, 19.0),
-        9,
-        5,
-        Some(Vec2::new(0.0, 1.0)),
-        Some(Vec2::new(0.0, 1.0)),
-    );
     let animation = &blueprint.animations.moving;
 
     let sprite = SpriteSheetBundle {
-        texture_atlas: texture_atlases.add(texture_atlas),
+        texture_atlas: assets.atlas.clone(),
         sprite: TextureAtlasSprite {
             index: animation.start_index,
             anchor: Anchor::BottomCenter,
