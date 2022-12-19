@@ -13,6 +13,8 @@ use crate::{
     Kingdom, GRAVITY_ACCELERATION, PX_PER_METER,
 };
 
+pub const MAX_ARROW_DEPTH: f32 = 0.125;
+
 pub struct WeaponPlugin;
 
 impl Plugin for WeaponPlugin {
@@ -22,10 +24,11 @@ impl Plugin for WeaponPlugin {
             .add_system(swing_subject_swords.before(despawn_dead_subjects))
             .add_system(tick_bows)
             .add_system(shoot_bows.after(tick_bows).after(UpdateSubjectState))
-            .add_system(set_arrow_velocities.after(shoot_bows))
+            .add_system(accelerate_arrows.after(shoot_bows))
+            .add_system(rotate_arrows.after(accelerate_arrows))
             .add_system(
                 collide_arrows
-                    .after(set_arrow_velocities)
+                    .after(accelerate_arrows)
                     .after(swing_subject_swords)
                     .before(despawn_dead_subjects),
             )
@@ -187,9 +190,18 @@ fn shoot_arrow(
     audio.play(sound).with_volume(0.5);
 }
 
-fn set_arrow_velocities(mut query: Query<&mut Velocity, With<Arrow>>, time: Res<Time>) {
+fn accelerate_arrows(mut query: Query<&mut Velocity, With<Arrow>>, time: Res<Time>) {
     for mut velocity in &mut query {
         velocity.linvel.y -= GRAVITY_ACCELERATION * time.delta_seconds();
+    }
+}
+
+fn rotate_arrows(mut query: Query<(&mut Transform, &Velocity), With<Arrow>>) {
+    for (mut transform, velocity) in &mut query {
+        if velocity.linvel != Vec2::ZERO {
+            let rotation = Vec2::angle_between(Vec2::X, velocity.linvel);
+            transform.rotation = Quat::from_rotation_z(rotation);
+        }
     }
 }
 
@@ -203,8 +215,8 @@ fn collide_arrows(
     mut commands: Commands,
 ) {
     for (arrow_entity, mut transform, mut velocity, arrow_kingdom) in &mut arrow_query {
-        if transform.translation.y <= 0.0 {
-            transform.translation.y = 0.0;
+        if transform.translation.y <= -MAX_ARROW_DEPTH {
+            transform.translation.y = -MAX_ARROW_DEPTH;
             velocity.linvel = Vec2::ZERO;
 
             commands.entity(arrow_entity).remove::<Arrow>();
@@ -257,7 +269,7 @@ fn spawn_arrow(
         Name::new("Arrow"),
         SpatialBundle::from_transform(Transform::from_translation(position)),
         RigidBody::KinematicVelocityBased,
-        ColliderBundle::new(Collider::cuboid(0.05, 0.05)),
+        ColliderBundle::new(Collider::ball(0.05)),
         Velocity::linear(velocity),
         Lifetime::new(20.0),
         kingdom,
@@ -271,6 +283,7 @@ fn spawn_arrow(
             ..default()
         },
         transform: Transform {
+            translation: Vec3::new(0.0, 0.0, -1.0),
             scale: Vec3::splat(1.0 / PX_PER_METER),
             ..default()
         },

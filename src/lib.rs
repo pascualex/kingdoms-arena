@@ -54,7 +54,7 @@ fn setup(mut commands: Commands) {
             scaling_mode: ScalingMode::FixedVertical(CAMERA_SIZE),
             ..default()
         },
-        transform: Transform::from_xyz(0.0, CAMERA_HEIGHT, 0.0),
+        transform: Transform::from_xyz(0.0, CAMERA_HEIGHT, 99.9),
         ..default()
     });
     // background
