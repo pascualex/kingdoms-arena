@@ -9,7 +9,18 @@ use kingdoms_arena::AppPlugin;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
+        .add_plugins(
+            DefaultPlugins
+                .set(WindowPlugin {
+                    window: WindowDescriptor {
+                        width: 1920.0,
+                        height: 1080.0,
+                        ..default()
+                    },
+                    ..default()
+                })
+                .set(ImagePlugin::default_nearest()),
+        )
         .add_plugin(AudioPlugin)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(RapierDebugRenderPlugin {

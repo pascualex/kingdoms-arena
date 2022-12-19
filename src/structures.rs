@@ -14,7 +14,7 @@ use crate::{
         content::{SubjectBlueprint, ELVEN_ARCHER, GOBLIN_WARRIOR},
         spawn_subject, Health, Subject,
     },
-    Kingdom, WORLD_EXTENSION, WORLD_HEIGHT,
+    Kingdom, SKY_HEIGHT, WORLD_EXTENSION,
 };
 
 pub struct StructuresPlugin;
@@ -65,14 +65,14 @@ fn setup(mut commands: Commands) {
         SpriteBundle {
             sprite: Sprite {
                 color: Color::rgba(0.1, 0.1, 0.1, 0.1),
-                custom_size: Some(Vec2::new(10.0, WORLD_HEIGHT)),
+                custom_size: Some(Vec2::new(10.0, SKY_HEIGHT)),
                 ..default()
             },
-            transform: Transform::from_xyz(-WORLD_EXTENSION + 6.0, WORLD_HEIGHT / 2.0, 0.0),
+            transform: Transform::from_xyz(-WORLD_EXTENSION + 6.0, SKY_HEIGHT / 2.0, 0.0),
             ..default()
         },
         RigidBody::Fixed,
-        ColliderBundle::new(Collider::cuboid(5.0, WORLD_HEIGHT / 2.0)),
+        ColliderBundle::new(Collider::cuboid(5.0, SKY_HEIGHT / 2.0)),
         Kingdom::Human,
         Trap,
     ));
@@ -81,14 +81,14 @@ fn setup(mut commands: Commands) {
         SpriteBundle {
             sprite: Sprite {
                 color: Color::rgba(0.1, 0.1, 0.1, 0.1),
-                custom_size: Some(Vec2::new(10.0, WORLD_HEIGHT)),
+                custom_size: Some(Vec2::new(10.0, SKY_HEIGHT)),
                 ..default()
             },
-            transform: Transform::from_xyz(WORLD_EXTENSION - 6.0, WORLD_HEIGHT / 2.0, 0.0),
+            transform: Transform::from_xyz(WORLD_EXTENSION - 6.0, SKY_HEIGHT / 2.0, 0.0),
             ..default()
         },
         RigidBody::Fixed,
-        ColliderBundle::new(Collider::cuboid(5.0, WORLD_HEIGHT / 2.0)),
+        ColliderBundle::new(Collider::cuboid(5.0, SKY_HEIGHT / 2.0)),
         Kingdom::Monster,
         Trap,
     ));
