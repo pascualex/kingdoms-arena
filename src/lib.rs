@@ -17,12 +17,13 @@ use self::{
     weapons::WeaponsPlugin,
 };
 
-const WORLD_HEIGHT: f32 = 13.0;
+// Perfect pixel art: 360.0 / 22.5 = 16.0
+const SKY_HEIGHT: f32 = 15.0;
+const GROUND_HEIGHT: f32 = 7.5;
 const WORLD_EXTENSION: f32 = 20.0;
-const GROUND_HEIGHT: f32 = 7.0;
 const GRAVITY_ACCELERATION: f32 = 9.8;
-const CAMERA_HEIGHT: f32 = (WORLD_HEIGHT - GROUND_HEIGHT) / 2.0;
-const CAMERA_SIZE: f32 = WORLD_HEIGHT + GROUND_HEIGHT;
+const CAMERA_HEIGHT: f32 = (SKY_HEIGHT - GROUND_HEIGHT) / 2.0;
+const CAMERA_SIZE: f32 = SKY_HEIGHT + GROUND_HEIGHT;
 const PX_PER_METER: f32 = 8.0;
 
 pub struct AppPlugin;
