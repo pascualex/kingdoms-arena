@@ -35,7 +35,7 @@ impl Plugin for WeaponPlugin {
 
 fn load_assets(asset_server: Res<AssetServer>, mut commands: Commands) {
     commands.insert_resource(WeaponAssets {
-        arrow_sprite: asset_server.load("sprites/arrow.png"),
+        arrow_sprite: asset_server.load("sprites/elven_arrow.png"),
         arrow_ground_hit_sound: asset_server.load("sounds/arrow_ground_hit.wav"),
         bow_shot_sound: asset_server.load("sounds/bow_shot.wav"),
     });
@@ -164,7 +164,12 @@ fn shoot_arrow(
     audio: &Audio,
     commands: &mut Commands,
 ) {
-    let diff = target_position - bow_position;
+    let position = match kingdom {
+        Kingdom::Human => bow_position + Vec3::new(0.4, 0.0, 0.0),
+        Kingdom::Monster => bow_position + Vec3::new(-0.4, 0.0, 0.0),
+    };
+
+    let diff = target_position - position;
     let random_offset = 0.85 + 0.3 * fastrand::f32();
     let speed = 10.0 * random_offset;
     let velocity_x = speed * diff.x.signum();
@@ -176,7 +181,7 @@ fn shoot_arrow(
     let velocity_y = diff.y / flight_time + GRAVITY_ACCELERATION * flight_time / 2.0;
     let velocity = Vec2::new(velocity_x, velocity_y);
 
-    spawn_arrow(bow_position, velocity, kingdom, assets, commands);
+    spawn_arrow(position, velocity, kingdom, assets, commands);
 
     let sound = assets.bow_shot_sound.clone();
     audio.play(sound).with_volume(0.5);

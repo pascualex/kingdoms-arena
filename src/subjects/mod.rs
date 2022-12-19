@@ -35,14 +35,8 @@ fn load_assets(
     mut atlases: ResMut<Assets<TextureAtlas>>,
     mut commands: Commands,
 ) {
-    let atlas = TextureAtlas::from_grid(
-        asset_server.load("sprites/archer.png"),
-        Vec2::new(20.0, 19.0),
-        7,
-        3,
-        Some(Vec2::new(0.0, 1.0)),
-        Some(Vec2::new(0.0, 1.0)),
-    );
+    let sprite = asset_server.load("sprites/elven_archer.png");
+    let atlas = TextureAtlas::from_grid(sprite, Vec2::splat(20.0), 7, 3, Some(Vec2::ONE), None);
     commands.insert_resource(SubjectAssets {
         atlas: atlases.add(atlas),
         death_sound: KingdomHandle {
