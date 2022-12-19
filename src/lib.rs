@@ -1,4 +1,4 @@
-#![allow(clippy::type_complexity)]
+#![allow(clippy::too_many_arguments, clippy::type_complexity)]
 
 mod animation;
 mod collision;
@@ -8,13 +8,13 @@ mod subjects;
 mod weapons;
 
 use bevy::{
-    core_pipeline::clear_color::ClearColorConfig, prelude::*, render::camera::ScalingMode,
-    sprite::Anchor,
+    asset::Asset, core_pipeline::clear_color::ClearColorConfig, prelude::*,
+    render::camera::ScalingMode, sprite::Anchor,
 };
 
 use self::{
-    animation::AnimationPlugin, structures::StructuresPlugin, subjects::SubjectsPlugin,
-    weapons::WeaponsPlugin,
+    animation::AnimationPlugin, structures::StructurePlugin, subjects::SubjectPlugin,
+    weapons::WeaponPlugin,
 };
 
 // Perfect pixel art: 360.0 / 22.5 = 16.0
@@ -31,9 +31,9 @@ pub struct AppPlugin;
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(AnimationPlugin)
-            .add_plugin(StructuresPlugin)
-            .add_plugin(SubjectsPlugin)
-            .add_plugin(WeaponsPlugin)
+            .add_plugin(StructurePlugin)
+            .add_plugin(SubjectPlugin)
+            .add_plugin(WeaponPlugin)
             .add_state(AppState::Game)
             .add_startup_system(setup);
     }
@@ -77,4 +77,18 @@ fn setup(mut commands: Commands) {
 pub enum Kingdom {
     Human,
     Monster,
+}
+
+pub struct KingdomHandle<T: Asset> {
+    pub human: Handle<T>,
+    pub monster: Handle<T>,
+}
+
+impl<T: Asset> KingdomHandle<T> {
+    pub fn get(&self, kingdom: Kingdom) -> Handle<T> {
+        match kingdom {
+            Kingdom::Human => self.human.clone(),
+            Kingdom::Monster => self.monster.clone(),
+        }
+    }
 }

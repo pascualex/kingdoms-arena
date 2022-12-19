@@ -1,21 +1,24 @@
 pub mod content;
 
-use bevy::prelude::*;
+use bevy::{prelude::*, sprite::Anchor};
 use bevy_kira_audio::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use crate::{
     collision::{intersections_with, ColliderBundle},
-    palette,
-    subjects::{despawn_dead_subjects, states::UpdateSubjectState, Frontlines, Health, Subject},
-    Kingdom, GRAVITY_ACCELERATION,
+    subjects::{
+        despawn_dead_subjects, state::UpdateSubjectState, Frontlines, Health, Subject,
+        SubjectAssets,
+    },
+    Kingdom, GRAVITY_ACCELERATION, PX_PER_METER,
 };
 
-pub struct WeaponsPlugin;
+pub struct WeaponPlugin;
 
-impl Plugin for WeaponsPlugin {
+impl Plugin for WeaponPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<ShotEvent>()
+            .add_startup_system(load_assets)
             .add_system(swing_subject_swords.before(despawn_dead_subjects))
             .add_system(tick_bows)
             .add_system(shoot_bows.after(tick_bows).after(UpdateSubjectState))
@@ -28,6 +31,21 @@ impl Plugin for WeaponsPlugin {
             )
             .add_system(despawn_lifetimes.after(shoot_bows));
     }
+}
+
+fn load_assets(asset_server: Res<AssetServer>, mut commands: Commands) {
+    commands.insert_resource(WeaponAssets {
+        arrow_sprite: asset_server.load("sprites/arrow.png"),
+        arrow_ground_hit_sound: asset_server.load("sounds/arrow_ground_hit.wav"),
+        bow_shot_sound: asset_server.load("sounds/bow_shot.wav"),
+    });
+}
+
+#[derive(Resource)]
+struct WeaponAssets {
+    arrow_sprite: Handle<Image>,
+    arrow_ground_hit_sound: Handle<AudioSource>,
+    bow_shot_sound: Handle<AudioSource>,
 }
 
 pub struct ShotEvent {
@@ -77,8 +95,8 @@ fn swing_subject_swords(
     sword_query: Query<(Entity, &Kingdom), (With<Subject>, With<Sword>)>,
     mut health_query: Query<(&Kingdom, &mut Health), With<Subject>>,
     context: Res<RapierContext>,
+    assets: Res<SubjectAssets>,
     audio: Res<Audio>,
-    asset_server: Res<AssetServer>,
 ) {
     for (sword_entity, sword_kingdom) in &sword_query {
         for health_entity in intersections_with(sword_entity, &context) {
@@ -88,8 +106,7 @@ fn swing_subject_swords(
 
             if health_kingdom != sword_kingdom {
                 health.damage(1);
-
-                let sound = asset_server.load("sounds/human_death.wav");
+                let sound = assets.death_sound.get(*health_kingdom);
                 audio.play(sound).with_volume(0.2);
             }
         }
@@ -107,8 +124,8 @@ fn shoot_bows(
     mut bow_query: Query<(&Transform, &Kingdom, &mut Bow)>,
     target_query: Query<(&Transform, &Velocity), With<Subject>>,
     frontlines: Res<Frontlines>,
+    assets: Res<WeaponAssets>,
     audio: Res<Audio>,
-    asset_server: Res<AssetServer>,
     mut commands: Commands,
 ) {
     for event in events.iter() {
@@ -131,8 +148,8 @@ fn shoot_bows(
             target_transform.translation,
             target_velocity.linvel,
             *kingdom,
+            &assets,
             &audio,
-            &asset_server,
             &mut commands,
         );
     }
@@ -143,8 +160,8 @@ fn shoot_arrow(
     target_position: Vec3,
     target_velocity: Vec2,
     kingdom: Kingdom,
+    assets: &WeaponAssets,
     audio: &Audio,
-    asset_server: &AssetServer,
     commands: &mut Commands,
 ) {
     let diff = target_position - bow_position;
@@ -157,27 +174,11 @@ fn shoot_arrow(
     let flight_time = (diff.x / relative_velocity_x) * random_offset;
     // TODO: this doesn't take vertical velocity into account for prediction
     let velocity_y = diff.y / flight_time + GRAVITY_ACCELERATION * flight_time / 2.0;
+    let velocity = Vec2::new(velocity_x, velocity_y);
 
-    commands.spawn((
-        Name::new("Arrow"),
-        SpriteBundle {
-            sprite: Sprite {
-                color: palette::DARK_YELLOW,
-                custom_size: Some(Vec2::new(0.1, 0.1)),
-                ..default()
-            },
-            transform: Transform::from_translation(bow_position),
-            ..default()
-        },
-        RigidBody::KinematicVelocityBased,
-        ColliderBundle::new(Collider::cuboid(0.05, 0.05)),
-        Velocity::linear(Vec2::new(velocity_x, velocity_y)),
-        Lifetime::new(20.0),
-        kingdom,
-        Arrow,
-    ));
+    spawn_arrow(bow_position, velocity, kingdom, assets, commands);
 
-    let sound = asset_server.load("sounds/bow_shot.wav");
+    let sound = assets.bow_shot_sound.clone();
     audio.play(sound).with_volume(0.5);
 }
 
@@ -191,8 +192,9 @@ fn collide_arrows(
     mut arrow_query: Query<(Entity, &mut Transform, &mut Velocity, &Kingdom), With<Arrow>>,
     mut subject_query: Query<(&Kingdom, &mut Health), With<Subject>>,
     context: Res<RapierContext>,
+    weapon_assets: Res<WeaponAssets>,
+    subject_assets: Res<SubjectAssets>,
     audio: Res<Audio>,
-    asset_server: Res<AssetServer>,
     mut commands: Commands,
 ) {
     for (arrow_entity, mut transform, mut velocity, arrow_kingdom) in &mut arrow_query {
@@ -202,7 +204,7 @@ fn collide_arrows(
 
             commands.entity(arrow_entity).remove::<Arrow>();
 
-            let sound = asset_server.load("sounds/arrow_ground_hit.wav");
+            let sound = weapon_assets.arrow_ground_hit_sound.clone();
             audio.play(sound).with_volume(0.15);
 
             continue;
@@ -217,7 +219,7 @@ fn collide_arrows(
                 health.damage(1);
                 commands.entity(arrow_entity).despawn_recursive();
 
-                let sound = asset_server.load("sounds/monster_death.wav");
+                let sound = subject_assets.death_sound.get(*subject_kingdom);
                 audio.play(sound).with_volume(0.2);
 
                 break;
@@ -237,4 +239,39 @@ fn despawn_lifetimes(
             commands.entity(entity).despawn_recursive();
         }
     }
+}
+
+fn spawn_arrow(
+    position: Vec3,
+    velocity: Vec2,
+    kingdom: Kingdom,
+    assets: &WeaponAssets,
+    commands: &mut Commands,
+) {
+    let root = (
+        Name::new("Arrow"),
+        SpatialBundle::from_transform(Transform::from_translation(position)),
+        RigidBody::KinematicVelocityBased,
+        ColliderBundle::new(Collider::cuboid(0.05, 0.05)),
+        Velocity::linear(velocity),
+        Lifetime::new(20.0),
+        kingdom,
+        Arrow,
+    );
+    let sprite = SpriteBundle {
+        texture: assets.arrow_sprite.clone(),
+        // texture_atlas: texture_atlases.add(texture_atlas),
+        sprite: Sprite {
+            anchor: Anchor::CenterRight,
+            ..default()
+        },
+        transform: Transform {
+            scale: Vec3::splat(1.0 / PX_PER_METER),
+            ..default()
+        },
+        ..default()
+    };
+    commands.spawn(root).with_children(|builder| {
+        builder.spawn(sprite);
+    });
 }

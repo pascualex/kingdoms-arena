@@ -1,10 +1,6 @@
 use std::time::Duration;
 
-use bevy::{
-    prelude::*,
-    sprite::{Anchor, TextureAtlas},
-    time::Stopwatch,
-};
+use bevy::{prelude::*, sprite::Anchor, time::Stopwatch};
 use bevy_kira_audio::prelude::*;
 use bevy_rapier2d::prelude::*;
 
@@ -12,19 +8,29 @@ use crate::{
     collision::{intersections_with, ColliderBundle},
     subjects::{
         content::{SubjectBlueprint, ELVEN_ARCHER, GOBLIN_WARRIOR},
-        spawn_subject, Health, Subject,
+        spawn_subject, Health, Subject, SubjectAssets,
     },
-    Kingdom, SKY_HEIGHT, WORLD_EXTENSION,
+    Kingdom, KingdomHandle, SKY_HEIGHT, WORLD_EXTENSION,
 };
 
-pub struct StructuresPlugin;
+pub struct StructurePlugin;
 
-impl Plugin for StructuresPlugin {
+impl Plugin for StructurePlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(setup)
+        app.add_startup_system(load_assets)
+            .add_startup_system(setup)
             .add_system(tick_spawners)
             .add_system(check_traps.after(tick_spawners));
     }
+}
+
+fn load_assets(asset_server: Res<AssetServer>, mut commands: Commands) {
+    commands.insert_resource(StructureAssets {
+        spawn_sound: KingdomHandle {
+            human: asset_server.load("sounds/human_spawn.wav"),
+            monster: asset_server.load("sounds/monster_spawn.wav"),
+        },
+    });
 }
 
 fn setup(mut commands: Commands) {
@@ -94,6 +100,11 @@ fn setup(mut commands: Commands) {
     ));
 }
 
+#[derive(Resource)]
+struct StructureAssets {
+    spawn_sound: KingdomHandle<AudioSource>,
+}
+
 #[derive(Component)]
 struct Spawner {
     subject_blueprint: SubjectBlueprint,
@@ -119,9 +130,9 @@ struct Trap;
 fn tick_spawners(
     mut query: Query<(&Transform, &Kingdom, &mut Spawner)>,
     time: Res<Time>,
+    structure_assets: Res<StructureAssets>,
+    subject_assets: Res<SubjectAssets>,
     audio: Res<Audio>,
-    asset_server: Res<AssetServer>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut commands: Commands,
 ) {
     for (transform, kingdom, mut spawner) in &mut query {
@@ -138,15 +149,11 @@ fn tick_spawners(
                 &spawner.subject_blueprint,
                 transform.translation,
                 *kingdom,
-                &asset_server,
-                &mut texture_atlases,
+                &subject_assets,
                 &mut commands,
             );
 
-            let sound = match kingdom {
-                Kingdom::Human => asset_server.load("sounds/human_spawn.wav"),
-                Kingdom::Monster => asset_server.load("sounds/monster_spawn.wav"),
-            };
+            let sound = structure_assets.spawn_sound.get(*kingdom);
             audio.play(sound).with_volume(0.1);
         }
     }
