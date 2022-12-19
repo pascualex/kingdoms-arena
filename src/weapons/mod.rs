@@ -50,11 +50,10 @@ pub struct Bow {
 }
 
 impl Bow {
-    pub fn new(range: f32, fire_rate: f32) -> Self {
-        Self {
-            range,
-            timer: Timer::from_seconds(1.0 / fire_rate, TimerMode::Once),
-        }
+    pub fn new(range: f32, recharge_seconds: f32) -> Self {
+        let mut timer = Timer::from_seconds(recharge_seconds, TimerMode::Once);
+        timer.set_elapsed(timer.duration());
+        Self { range, timer }
     }
 }
 
@@ -105,7 +104,7 @@ fn tick_bows(mut query: Query<&mut Bow>, time: Res<Time>) {
 
 fn shoot_bows(
     mut events: EventReader<ShotEvent>,
-    bow_query: Query<(&Transform, &Kingdom)>,
+    mut bow_query: Query<(&Transform, &Kingdom, &mut Bow)>,
     target_query: Query<(&Transform, &Velocity), With<Subject>>,
     frontlines: Res<Frontlines>,
     audio: Res<Audio>,
@@ -113,7 +112,7 @@ fn shoot_bows(
     mut commands: Commands,
 ) {
     for event in events.iter() {
-        let Ok((bow_transform, kingdom)) = bow_query.get(event.bow_entity) else {
+        let Ok((bow_transform, kingdom, mut bow)) = bow_query.get_mut(event.bow_entity) else {
             continue;
         };
         let frontline_entity = match kingdom {
@@ -126,6 +125,7 @@ fn shoot_bows(
         let Ok((target_transform, target_velocity)) = target_query.get(target_entity) else {
             continue;
         };
+        bow.timer.reset();
         shoot_arrow(
             bow_transform.translation,
             target_transform.translation,

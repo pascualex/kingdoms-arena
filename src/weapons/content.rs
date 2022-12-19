@@ -5,10 +5,10 @@ pub enum WeaponsBlueprint {
 
 pub struct BowBlueprint {
     pub range: f32,
-    pub fire_rate: f32,
+    pub recharge_seconds: f32,
 }
 
 pub const ELVEN_BOW: BowBlueprint = BowBlueprint {
     range: 10.0,
-    fire_rate: 0.3,
+    recharge_seconds: 2.3,
 };

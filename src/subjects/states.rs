@@ -14,8 +14,9 @@ pub struct SubjectStatesPlugin;
 
 impl Plugin for SubjectStatesPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(transition_to_moving.label(UpdateSubjectState))
-            .add_system(transition_to_shooting.label(UpdateSubjectState));
+        app.add_system(transition_from_moving.label(UpdateSubjectState))
+            .add_system(transition_from_recharging.label(UpdateSubjectState))
+            .add_system(transition_from_shooting.label(UpdateSubjectState));
     }
 }
 
@@ -25,43 +26,13 @@ pub struct MovingState;
 
 #[derive(Component)]
 #[component(storage = "SparseSet")]
-pub struct RecharginState;
+pub struct RechargingState;
 
 #[derive(Component)]
 #[component(storage = "SparseSet")]
 pub struct ShootingState;
 
-fn transition_to_moving(
-    mut subject_query: Query<
-        (
-            Entity,
-            &Transform,
-            &mut AnimationPlayer,
-            &Kingdom,
-            &SubjectAnimations,
-            &Bow,
-        ),
-        (With<Subject>, With<ShootingState>),
-    >,
-    frontlines: Res<Frontlines>,
-    mut events: EventWriter<ShotEvent>,
-    mut commands: Commands,
-) {
-    for (entity, transform, mut player, kingdom, animations, bow) in &mut subject_query {
-        if player.is_finished() || !frontline_in_range(transform, kingdom, bow, &frontlines) {
-            if player.is_finished() {
-                events.send(ShotEvent::new(entity));
-            }
-            player.set(&animations.moving, AnimationMode::Repeating);
-            commands
-                .entity(entity)
-                .insert(MovingState)
-                .remove::<ShootingState>();
-        }
-    }
-}
-
-fn transition_to_shooting(
+fn transition_from_moving(
     mut subject_query: Query<
         (
             Entity,
@@ -78,11 +49,72 @@ fn transition_to_shooting(
 ) {
     for (entity, transform, mut player, kingdom, animations, bow) in &mut subject_query {
         if frontline_in_range(transform, kingdom, bow, &frontlines) {
+            commands.entity(entity).remove::<MovingState>();
+            if bow.timer.finished() {
+                player.set(&animations.shooting, AnimationMode::Once);
+                commands.entity(entity).insert(ShootingState);
+            } else {
+                player.set(&animations.idle, AnimationMode::Repeating);
+                commands.entity(entity).insert(RechargingState);
+            }
+        }
+    }
+}
+
+fn transition_from_recharging(
+    mut subject_query: Query<
+        (
+            Entity,
+            &Transform,
+            &mut AnimationPlayer,
+            &Kingdom,
+            &SubjectAnimations,
+            &Bow,
+        ),
+        (With<Subject>, With<RechargingState>),
+    >,
+    frontlines: Res<Frontlines>,
+    mut commands: Commands,
+) {
+    for (entity, transform, mut player, kingdom, animations, bow) in &mut subject_query {
+        if !frontline_in_range(transform, kingdom, bow, &frontlines) {
+            commands.entity(entity).remove::<RechargingState>();
+            player.set(&animations.moving, AnimationMode::Repeating);
+            commands.entity(entity).insert(MovingState);
+        } else if bow.timer.finished() {
+            commands.entity(entity).remove::<RechargingState>();
             player.set(&animations.shooting, AnimationMode::Once);
-            commands
-                .entity(entity)
-                .insert(ShootingState)
-                .remove::<MovingState>();
+            commands.entity(entity).insert(ShootingState);
+        }
+    }
+}
+
+fn transition_from_shooting(
+    mut subject_query: Query<
+        (
+            Entity,
+            &Transform,
+            &mut AnimationPlayer,
+            &Kingdom,
+            &SubjectAnimations,
+            &Bow,
+        ),
+        (With<Subject>, With<ShootingState>),
+    >,
+    frontlines: Res<Frontlines>,
+    mut events: EventWriter<ShotEvent>,
+    mut commands: Commands,
+) {
+    for (entity, transform, mut player, kingdom, animations, bow) in &mut subject_query {
+        if !frontline_in_range(transform, kingdom, bow, &frontlines) {
+            commands.entity(entity).remove::<ShootingState>();
+            player.set(&animations.moving, AnimationMode::Repeating);
+            commands.entity(entity).insert(MovingState);
+        } else if player.is_finished() {
+            commands.entity(entity).remove::<ShootingState>();
+            player.set(&animations.idle, AnimationMode::Repeating);
+            events.send(ShotEvent::new(entity));
+            commands.entity(entity).insert(RechargingState);
         }
     }
 }
