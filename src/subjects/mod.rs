@@ -40,7 +40,7 @@ fn load_assets(
     commands.insert_resource(SubjectAssets {
         atlas: atlases.add(atlas),
         death_sound: KingdomHandle {
-            human: asset_server.load("sounds/human_death.wav"),
+            elven: asset_server.load("sounds/elf_death.wav"),
             monster: asset_server.load("sounds/monster_death.wav"),
         },
     });
@@ -54,14 +54,14 @@ pub struct SubjectAssets {
 
 #[derive(Resource)]
 pub struct Frontlines {
-    pub human: Frontline,
+    pub elven: Frontline,
     pub monster: Frontline,
 }
 
 impl Default for Frontlines {
     fn default() -> Self {
         Self {
-            human: Frontline {
+            elven: Frontline {
                 position: f32::NEG_INFINITY,
                 entity: None,
             },
@@ -131,7 +131,7 @@ fn set_subject_velocities(
     for (mut velocity, kingdom, speed, moving_state) in &mut query {
         velocity.linvel.x = match moving_state {
             Some(_) => match kingdom {
-                Kingdom::Human => **speed,
+                Kingdom::Elven => **speed,
                 Kingdom::Monster => -**speed,
             },
             None => 0.0,
@@ -143,18 +143,18 @@ fn update_frontlines(
     query: Query<(Entity, &Transform, &Kingdom), With<Subject>>,
     mut frontlines: ResMut<Frontlines>,
 ) {
-    frontlines.human.position = f32::NEG_INFINITY;
+    frontlines.elven.position = f32::NEG_INFINITY;
     frontlines.monster.position = f32::INFINITY;
 
-    frontlines.human.entity = None;
+    frontlines.elven.entity = None;
     frontlines.monster.entity = None;
 
     for (entity, transform, kingdom) in &query {
         match kingdom {
-            Kingdom::Human => {
-                if transform.translation.x > frontlines.human.position {
-                    frontlines.human.position = transform.translation.x;
-                    frontlines.human.entity = Some(entity);
+            Kingdom::Elven => {
+                if transform.translation.x > frontlines.elven.position {
+                    frontlines.elven.position = transform.translation.x;
+                    frontlines.elven.entity = Some(entity);
                 }
             }
             Kingdom::Monster => {

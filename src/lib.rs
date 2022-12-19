@@ -75,19 +75,19 @@ fn setup(mut commands: Commands) {
 
 #[derive(Component, PartialEq, Eq, Clone, Copy)]
 pub enum Kingdom {
-    Human,
+    Elven,
     Monster,
 }
 
 pub struct KingdomHandle<T: Asset> {
-    pub human: Handle<T>,
+    pub elven: Handle<T>,
     pub monster: Handle<T>,
 }
 
 impl<T: Asset> KingdomHandle<T> {
     pub fn get(&self, kingdom: Kingdom) -> Handle<T> {
         match kingdom {
-            Kingdom::Human => self.human.clone(),
+            Kingdom::Elven => self.elven.clone(),
             Kingdom::Monster => self.monster.clone(),
         }
     }

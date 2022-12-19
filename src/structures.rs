@@ -27,7 +27,7 @@ impl Plugin for StructurePlugin {
 fn load_assets(asset_server: Res<AssetServer>, mut commands: Commands) {
     commands.insert_resource(StructureAssets {
         spawn_sound: KingdomHandle {
-            human: asset_server.load("sounds/human_spawn.wav"),
+            elven: asset_server.load("sounds/elf_spawn.wav"),
             monster: asset_server.load("sounds/monster_spawn.wav"),
         },
     });
@@ -36,7 +36,7 @@ fn load_assets(asset_server: Res<AssetServer>, mut commands: Commands) {
 fn setup(mut commands: Commands) {
     // spawners
     commands.spawn((
-        Name::new("Human spawner"),
+        Name::new("Elven spawner"),
         SpriteBundle {
             sprite: Sprite {
                 color: Color::rgba(0.2, 0.1, 0.1, 0.5),
@@ -47,7 +47,7 @@ fn setup(mut commands: Commands) {
             transform: Transform::from_xyz(-WORLD_EXTENSION + 5.0, 0.0, 0.0),
             ..default()
         },
-        Kingdom::Human,
+        Kingdom::Elven,
         Spawner::new(ELVEN_ARCHER, 12.0),
     ));
     commands.spawn((
@@ -67,7 +67,7 @@ fn setup(mut commands: Commands) {
     ));
     // traps
     commands.spawn((
-        Name::new("Human trap"),
+        Name::new("Elven trap"),
         SpriteBundle {
             sprite: Sprite {
                 color: Color::rgba(0.1, 0.1, 0.1, 0.1),
@@ -79,7 +79,7 @@ fn setup(mut commands: Commands) {
         },
         RigidBody::Fixed,
         ColliderBundle::new(Collider::cuboid(5.0, SKY_HEIGHT / 2.0)),
-        Kingdom::Human,
+        Kingdom::Elven,
         Trap,
     ));
     commands.spawn((
