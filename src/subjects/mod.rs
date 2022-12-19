@@ -85,6 +85,7 @@ pub struct Speed(pub f32);
 
 #[derive(Component, Clone)]
 pub struct SubjectAnimations {
+    idle: Animation,
     moving: Animation,
     shooting: Animation,
 }
@@ -200,7 +201,7 @@ pub fn spawn_subject(
 
     match &blueprint.weapon {
         WeaponsBlueprint::Sword => root_commands.insert(Sword),
-        WeaponsBlueprint::Bow(b) => root_commands.insert(Bow::new(b.range, b.fire_rate)),
+        WeaponsBlueprint::Bow(b) => root_commands.insert(Bow::new(b.range, b.recharge_seconds)),
     };
 
     root_commands.push_children(&[sprite_entity]);
