@@ -23,7 +23,9 @@ impl Plugin for SubjectPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(SubjectStatePlugin)
             .init_resource::<Frontlines>()
+            .add_event::<SpawnEvent>()
             .add_startup_system(load_assets)
+            .add_system(spawn_subjects)
             .add_system(set_subject_velocities.after(UpdateSubjectState))
             .add_system(update_frontlines)
             .add_system(despawn_dead_subjects);
@@ -78,6 +80,22 @@ pub struct Frontline {
     pub entity: Option<Entity>,
 }
 
+pub struct SpawnEvent {
+    pub blueprint: SubjectBlueprint,
+    pub position: Vec3,
+    pub kingdom: Kingdom,
+}
+
+impl SpawnEvent {
+    pub fn new(blueprint: SubjectBlueprint, position: Vec3, kingdom: Kingdom) -> Self {
+        Self {
+            blueprint,
+            position,
+            kingdom,
+        }
+    }
+}
+
 #[derive(Component)]
 pub struct Subject;
 
@@ -112,6 +130,62 @@ pub struct SubjectAnimations {
     idle: Animation,
     moving: Animation,
     shooting: Animation,
+}
+
+pub fn spawn_subjects(
+    mut events: EventReader<SpawnEvent>,
+    assets: Res<SubjectAssets>,
+    mut commands: Commands,
+) {
+    for event in events.iter() {
+        let animation = &event.blueprint.animations.moving;
+
+        let sprite = SpriteSheetBundle {
+            texture_atlas: assets.atlas.clone(),
+            sprite: TextureAtlasSprite {
+                index: animation.start_index,
+                anchor: Anchor::BottomCenter,
+                flip_x: matches!(event.kingdom, Kingdom::Monster),
+                ..default()
+            },
+            transform: Transform {
+                translation: Vec3::new(0.0, -event.blueprint.size.y / 2.0, 0.0),
+                scale: Vec3::splat(1.0 / PX_PER_METER),
+                ..default()
+            },
+            ..default()
+        };
+        let sprite_entity = commands.spawn(sprite).id();
+
+        let mut root_commands = commands.spawn((
+            Name::new(event.blueprint.name),
+            SpatialBundle::from_transform(Transform::from_translation(
+                event.position + Vec3::new(0.0, event.blueprint.size.y / 2.0, 0.0),
+            )),
+            AnimationPlayer::new(sprite_entity, animation, AnimationMode::Repeating),
+            RigidBody::KinematicVelocityBased,
+            ColliderBundle::new(Collider::cuboid(
+                event.blueprint.size.x / 2.0,
+                event.blueprint.size.y / 2.0,
+            )),
+            Velocity::zero(),
+            event.kingdom,
+            Subject,
+            Health::new(1),
+            Speed(event.blueprint.speed),
+            event.blueprint.animations.clone(),
+            MovingState,
+        ));
+
+        match &event.blueprint.weapon {
+            WeaponsBlueprint::Sword => root_commands.insert(Sword),
+            WeaponsBlueprint::Bow(b) => {
+                root_commands.insert(Bow::new(b.range, b.speed, b.recharge_seconds))
+            }
+        };
+
+        root_commands.push_children(&[sprite_entity]);
+    }
 }
 
 pub fn despawn_dead_subjects(
@@ -165,60 +239,4 @@ fn update_frontlines(
             }
         }
     }
-}
-
-pub fn spawn_subject(
-    blueprint: &SubjectBlueprint,
-    position: Vec3,
-    kingdom: Kingdom,
-    assets: &SubjectAssets,
-    commands: &mut Commands,
-) {
-    let animation = &blueprint.animations.moving;
-
-    let sprite = SpriteSheetBundle {
-        texture_atlas: assets.atlas.clone(),
-        sprite: TextureAtlasSprite {
-            index: animation.start_index,
-            anchor: Anchor::BottomCenter,
-            flip_x: matches!(kingdom, Kingdom::Monster),
-            ..default()
-        },
-        transform: Transform {
-            translation: Vec3::new(0.0, -blueprint.size.y / 2.0, 0.0),
-            scale: Vec3::splat(1.0 / PX_PER_METER),
-            ..default()
-        },
-        ..default()
-    };
-    let sprite_entity = commands.spawn(sprite).id();
-
-    let mut root_commands = commands.spawn((
-        Name::new(blueprint.name),
-        SpatialBundle::from_transform(Transform::from_translation(
-            position + Vec3::new(0.0, blueprint.size.y / 2.0, 0.0),
-        )),
-        AnimationPlayer::new(sprite_entity, animation, AnimationMode::Repeating),
-        RigidBody::KinematicVelocityBased,
-        ColliderBundle::new(Collider::cuboid(
-            blueprint.size.x / 2.0,
-            blueprint.size.y / 2.0,
-        )),
-        Velocity::zero(),
-        kingdom,
-        Subject,
-        Health::new(1),
-        Speed(blueprint.speed),
-        blueprint.animations.clone(),
-        MovingState,
-    ));
-
-    match &blueprint.weapon {
-        WeaponsBlueprint::Sword => root_commands.insert(Sword),
-        WeaponsBlueprint::Bow(b) => {
-            root_commands.insert(Bow::new(b.range, b.speed, b.recharge_seconds))
-        }
-    };
-
-    root_commands.push_children(&[sprite_entity]);
 }

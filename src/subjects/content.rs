@@ -6,6 +6,8 @@ use crate::{
     weapons::content::{WeaponsBlueprint, ELVEN_BOW},
 };
 
+// TODO: remove clone when this is an asset
+#[derive(Clone)]
 pub struct SubjectBlueprint {
     pub name: &'static str,
     pub size: Vec2,

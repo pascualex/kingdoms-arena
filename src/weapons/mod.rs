@@ -184,7 +184,7 @@ fn shoot_arrow(
     let speed = bow_speed * random_offset;
     let velocity_x = speed * diff.x.signum();
     let relative_velocity_x = velocity_x - target_velocity.x;
-    let random_offset = 0.75 + 0.75 * fastrand::f32();
+    let random_offset = 0.75 + 1.25 * fastrand::f32();
     // TODO: this doesn't work when the target runs away faster than the arrow
     let flight_time = (diff.x / relative_velocity_x) * random_offset;
     // TODO: this doesn't take vertical velocity into account for prediction
