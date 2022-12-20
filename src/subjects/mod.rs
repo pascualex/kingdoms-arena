@@ -89,13 +89,13 @@ pub struct Frontline {
 }
 
 pub struct SpawnEvent {
-    pub blueprint: SubjectBlueprint,
+    pub blueprint: &'static SubjectBlueprint,
     pub position: Vec3,
     pub kingdom: Kingdom,
 }
 
 impl SpawnEvent {
-    pub fn new(blueprint: SubjectBlueprint, position: Vec3, kingdom: Kingdom) -> Self {
+    pub fn new(blueprint: &'static SubjectBlueprint, position: Vec3, kingdom: Kingdom) -> Self {
         Self {
             blueprint,
             position,
@@ -185,7 +185,7 @@ pub fn spawn_subjects(
             MovingState,
         ));
 
-        match &event.blueprint.weapon {
+        match event.blueprint.weapon {
             WeaponsBlueprint::Sword => root_commands.insert(Sword),
             WeaponsBlueprint::Bow(b) => {
                 root_commands.insert(Bow::new(b.range, b.spread, b.speed, b.recharge_seconds))
