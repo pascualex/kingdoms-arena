@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{palette, structures::SpawnerEvent};
+use crate::{palette, structures::NexusSpawnEvent, subjects::content::ELVEN_ARCHER, Kingdom};
 
 pub struct UiPlugin;
 
@@ -33,11 +33,12 @@ fn setup(mut commands: Commands) {
 
 fn spawn_on_click(
     query: Query<&Interaction, Changed<Interaction>>,
-    mut events: EventWriter<SpawnerEvent>,
+    mut events: EventWriter<NexusSpawnEvent>,
 ) {
     for interaction in &query {
         if matches!(interaction, Interaction::Clicked) {
-            events.send(SpawnerEvent);
+            let event = NexusSpawnEvent::new(ELVEN_ARCHER, Kingdom::Elven);
+            events.send(event);
         }
     }
 }
