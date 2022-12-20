@@ -179,7 +179,7 @@ pub fn spawn_subjects(
             Velocity::zero(),
             event.kingdom,
             Subject,
-            Health::new(1),
+            Health::new(event.blueprint.health),
             Speed(event.blueprint.speed),
             event.blueprint.animations.clone(),
             MovingState,
