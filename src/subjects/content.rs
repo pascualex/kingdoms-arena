@@ -6,8 +6,6 @@ use crate::{
     weapons::content::{WeaponsBlueprint, ELVEN_BOW, ELVEN_FAST_BOW, ELVEN_SNIPER_BOW},
 };
 
-// TODO: remove clone when this is an asset
-#[derive(Clone)]
 pub struct SubjectBlueprint {
     pub name: &'static str,
     pub size: Vec2,
@@ -20,7 +18,7 @@ pub const ELVEN_ARCHER: SubjectBlueprint = SubjectBlueprint {
     name: "Elven archer",
     size: Vec2::new(1.0, 1.625),
     speed: 1.5,
-    weapon: WeaponsBlueprint::Bow(ELVEN_BOW),
+    weapon: WeaponsBlueprint::Bow(&ELVEN_BOW),
     animations: SubjectAnimations {
         idle: Animation::new(0, 2, 0.6),
         moving: Animation::new(7, 4, 0.3),
@@ -32,7 +30,7 @@ pub const ELVEN_FAST_ARCHER: SubjectBlueprint = SubjectBlueprint {
     name: "Fast elven archer",
     size: Vec2::new(1.0, 1.625),
     speed: 3.5,
-    weapon: WeaponsBlueprint::Bow(ELVEN_FAST_BOW),
+    weapon: WeaponsBlueprint::Bow(&ELVEN_FAST_BOW),
     animations: SubjectAnimations {
         idle: Animation::new(0, 2, 0.3),
         moving: Animation::new(7, 4, 0.2),
@@ -44,7 +42,7 @@ pub const ELVEN_SNIPER_ARCHER: SubjectBlueprint = SubjectBlueprint {
     name: "Elven sniper archer",
     size: Vec2::new(1.0, 1.625),
     speed: 1.0,
-    weapon: WeaponsBlueprint::Bow(ELVEN_SNIPER_BOW),
+    weapon: WeaponsBlueprint::Bow(&ELVEN_SNIPER_BOW),
     animations: SubjectAnimations {
         idle: Animation::new(0, 2, 0.6),
         moving: Animation::new(7, 4, 0.45),

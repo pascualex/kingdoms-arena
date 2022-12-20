@@ -17,11 +17,11 @@ impl Plugin for UiPlugin {
 
 #[derive(Component)]
 struct SpawnButton {
-    blueprint: SubjectBlueprint,
+    blueprint: &'static SubjectBlueprint,
 }
 
 impl SpawnButton {
-    pub fn new(blueprint: SubjectBlueprint) -> Self {
+    pub fn new(blueprint: &'static SubjectBlueprint) -> Self {
         Self { blueprint }
     }
 }
@@ -44,7 +44,7 @@ fn setup(mut commands: Commands) {
             background_color: palette::DARK_BLUE.into(),
             ..default()
         },
-        SpawnButton::new(ELVEN_ARCHER),
+        SpawnButton::new(&ELVEN_ARCHER),
     );
     let button_2 = (
         ButtonBundle {
@@ -56,7 +56,7 @@ fn setup(mut commands: Commands) {
             background_color: palette::DARK_YELLOW.into(),
             ..default()
         },
-        SpawnButton::new(ELVEN_FAST_ARCHER),
+        SpawnButton::new(&ELVEN_FAST_ARCHER),
     );
     let button_3 = (
         ButtonBundle {
@@ -67,7 +67,7 @@ fn setup(mut commands: Commands) {
             background_color: palette::DARK_ORANGE.into(),
             ..default()
         },
-        SpawnButton::new(ELVEN_SNIPER_ARCHER),
+        SpawnButton::new(&ELVEN_SNIPER_ARCHER),
     );
     commands.spawn(root).with_children(|builder| {
         builder.spawn(button_1);
@@ -82,7 +82,7 @@ fn spawn_on_click(
 ) {
     for (interaction, spawn) in &query {
         if matches!(interaction, Interaction::Clicked) {
-            let event = NexusSpawnEvent::new(spawn.blueprint.clone(), Kingdom::Elven);
+            let event = NexusSpawnEvent::new(spawn.blueprint, Kingdom::Elven);
             events.send(event);
         }
     }

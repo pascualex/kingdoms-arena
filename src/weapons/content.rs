@@ -1,12 +1,8 @@
-// TODO: remove clone when this is an asset
-#[derive(Clone)]
 pub enum WeaponsBlueprint {
     Sword,
-    Bow(BowBlueprint),
+    Bow(&'static BowBlueprint),
 }
 
-// TODO: remove clone when this is an asset
-#[derive(Clone)]
 pub struct BowBlueprint {
     pub range: f32,
     pub speed: f32,

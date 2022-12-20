@@ -105,12 +105,12 @@ impl FromWorld for StructureAssets {
 }
 
 pub struct NexusSpawnEvent {
-    pub blueprint: SubjectBlueprint,
+    pub blueprint: &'static SubjectBlueprint,
     pub kingdom: Kingdom,
 }
 
 impl NexusSpawnEvent {
-    pub fn new(blueprint: SubjectBlueprint, kingdom: Kingdom) -> Self {
+    pub fn new(blueprint: &'static SubjectBlueprint, kingdom: Kingdom) -> Self {
         Self { blueprint, kingdom }
     }
 }
@@ -134,7 +134,7 @@ fn nexus_spawn_subjects(
                 continue;
             }
 
-            let blueprint = nexus_spawn_event.blueprint.clone();
+            let blueprint = nexus_spawn_event.blueprint;
             let event = SpawnEvent::new(blueprint, transform.translation, *kingdom);
             spawn_events.send(event);
 
