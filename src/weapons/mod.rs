@@ -70,16 +70,18 @@ pub struct Sword;
 #[derive(Component)]
 pub struct Bow {
     pub range: f32,
+    pub spread: f32,
     pub speed: f32,
     pub timer: Timer,
 }
 
 impl Bow {
-    pub fn new(range: f32, speed: f32, recharge_seconds: f32) -> Self {
+    pub fn new(range: f32, spread: f32, speed: f32, recharge_seconds: f32) -> Self {
         let mut timer = Timer::from_seconds(recharge_seconds, TimerMode::Once);
         timer.set_elapsed(timer.duration());
         Self {
             range,
+            spread,
             speed,
             timer,
         }
@@ -154,50 +156,29 @@ fn shoot_bows(
             continue;
         };
         bow.timer.reset();
-        shoot_arrow(
-            bow_transform.translation,
-            bow.speed,
-            *kingdom,
-            target_transform.translation,
-            target_velocity.linvel,
-            &assets,
-            &audio,
-            &mut commands,
-        );
+
+        let position = match *kingdom {
+            Kingdom::Elven => bow_transform.translation + Vec3::new(0.4, 0.0, 0.0),
+            Kingdom::Monster => bow_transform.translation + Vec3::new(-0.4, 0.0, 0.0),
+        };
+
+        let diff = target_transform.translation - position;
+        let random_offset = 0.85 + 0.3 * fastrand::f32();
+        let speed = bow.speed * random_offset;
+        let velocity_x = speed * diff.x.signum();
+        let relative_velocity_x = velocity_x - target_velocity.linvel.x;
+        let random_offset = (1.0 - bow.spread / 4.0) + bow.spread * fastrand::f32();
+        // TODO: this doesn't work when the target runs away faster than the arrow
+        let flight_time = (diff.x / relative_velocity_x) * random_offset;
+        // TODO: this doesn't take vertical velocity into account for prediction
+        let velocity_y = diff.y / flight_time + GRAVITY_ACCELERATION * flight_time / 2.0;
+        let velocity = Vec2::new(velocity_x, velocity_y);
+
+        spawn_arrow(position, velocity, *kingdom, &assets, &mut commands);
+
+        let sound = assets.bow_shot_sound.clone();
+        audio.play(sound).with_volume(0.5);
     }
-}
-
-fn shoot_arrow(
-    bow_position: Vec3,
-    bow_speed: f32,
-    bow_kingdom: Kingdom,
-    target_position: Vec3,
-    target_velocity: Vec2,
-    assets: &WeaponAssets,
-    audio: &Audio,
-    commands: &mut Commands,
-) {
-    let position = match bow_kingdom {
-        Kingdom::Elven => bow_position + Vec3::new(0.4, 0.0, 0.0),
-        Kingdom::Monster => bow_position + Vec3::new(-0.4, 0.0, 0.0),
-    };
-
-    let diff = target_position - position;
-    let random_offset = 0.85 + 0.3 * fastrand::f32();
-    let speed = bow_speed * random_offset;
-    let velocity_x = speed * diff.x.signum();
-    let relative_velocity_x = velocity_x - target_velocity.x;
-    let random_offset = 0.75 + 1.25 * fastrand::f32();
-    // TODO: this doesn't work when the target runs away faster than the arrow
-    let flight_time = (diff.x / relative_velocity_x) * random_offset;
-    // TODO: this doesn't take vertical velocity into account for prediction
-    let velocity_y = diff.y / flight_time + GRAVITY_ACCELERATION * flight_time / 2.0;
-    let velocity = Vec2::new(velocity_x, velocity_y);
-
-    spawn_arrow(position, velocity, bow_kingdom, assets, commands);
-
-    let sound = assets.bow_shot_sound.clone();
-    audio.play(sound).with_volume(0.5);
 }
 
 fn accelerate_arrows(mut query: Query<&mut Velocity, With<Arrow>>, time: Res<Time>) {

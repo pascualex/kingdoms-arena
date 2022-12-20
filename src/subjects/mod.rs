@@ -188,7 +188,7 @@ pub fn spawn_subjects(
         match &event.blueprint.weapon {
             WeaponsBlueprint::Sword => root_commands.insert(Sword),
             WeaponsBlueprint::Bow(b) => {
-                root_commands.insert(Bow::new(b.range, b.speed, b.recharge_seconds))
+                root_commands.insert(Bow::new(b.range, b.spread, b.speed, b.recharge_seconds))
             }
         };
 
