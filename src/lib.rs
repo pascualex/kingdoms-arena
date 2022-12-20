@@ -1,5 +1,6 @@
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
 
+mod ai;
 mod animation;
 mod collision;
 mod palette;
@@ -14,11 +15,11 @@ use bevy::{
 };
 
 use self::{
-    animation::AnimationPlugin, structures::StructurePlugin, subjects::SubjectPlugin, ui::UiPlugin,
-    weapons::WeaponPlugin,
+    ai::AiPlugin, animation::AnimationPlugin, structures::StructurePlugin, subjects::SubjectPlugin,
+    ui::UiPlugin, weapons::WeaponPlugin,
 };
 
-// Perfect pixel art: 360.0 / 22.5 = 16.0
+// perfect pixel art: 360.0 / 22.5 = 16.0
 const SKY_HEIGHT: f32 = 15.0;
 const GROUND_HEIGHT: f32 = 7.5;
 const WORLD_EXTENSION: f32 = 20.0;
@@ -31,7 +32,8 @@ pub struct AppPlugin;
 
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(AnimationPlugin)
+        app.add_plugin(AiPlugin)
+            .add_plugin(AnimationPlugin)
             .add_plugin(StructurePlugin)
             .add_plugin(SubjectPlugin)
             .add_plugin(UiPlugin)
