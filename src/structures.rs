@@ -1,15 +1,10 @@
-use std::time::Duration;
-
-use bevy::{prelude::*, sprite::Anchor, time::Stopwatch};
+use bevy::{prelude::*, sprite::Anchor};
 use bevy_kira_audio::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use crate::{
     collision::{intersections_with, ColliderBundle},
-    subjects::{
-        content::{SubjectBlueprint, GOBLIN_WARRIOR},
-        spawn_subjects, Health, SpawnEvent, Subject,
-    },
+    subjects::{content::SubjectBlueprint, spawn_subjects, Health, SpawnEvent, Subject},
     Kingdom, KingdomHandle, SKY_HEIGHT, WORLD_EXTENSION,
 };
 
@@ -18,10 +13,8 @@ pub struct StructurePlugin;
 impl Plugin for StructurePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<StructureAssets>()
-            .insert_resource(AiPlayer::new(0.5))
             .add_event::<NexusSpawnEvent>()
             .add_startup_system(setup)
-            .add_system(tick_ai_player)
             .add_system(nexus_spawn_subjects)
             .add_system(check_traps.after(spawn_subjects));
     }
@@ -111,23 +104,6 @@ impl FromWorld for StructureAssets {
     }
 }
 
-#[derive(Resource)]
-struct AiPlayer {
-    stopwatch: Stopwatch,
-    average_interval: Duration,
-    next_interval: Duration,
-}
-
-impl AiPlayer {
-    fn new(interval_seconds: f32) -> Self {
-        Self {
-            stopwatch: Stopwatch::new(),
-            average_interval: Duration::from_secs_f32(interval_seconds),
-            next_interval: Duration::ZERO,
-        }
-    }
-}
-
 pub struct NexusSpawnEvent {
     pub blueprint: SubjectBlueprint,
     pub kingdom: Kingdom,
@@ -144,29 +120,6 @@ struct Nexus;
 
 #[derive(Component)]
 struct Trap;
-
-fn tick_ai_player(
-    mut ai_player: ResMut<AiPlayer>,
-    mut events: EventWriter<NexusSpawnEvent>,
-    time: Res<Time>,
-    structure_assets: Res<StructureAssets>,
-    audio: Res<Audio>,
-) {
-    ai_player.stopwatch.tick(time.delta());
-    while ai_player.stopwatch.elapsed() >= ai_player.next_interval {
-        let remaining = ai_player.stopwatch.elapsed() - ai_player.next_interval;
-        ai_player.stopwatch.set_elapsed(remaining);
-
-        let random_offset = 0.5 + fastrand::f32();
-        ai_player.next_interval = ai_player.average_interval.mul_f32(random_offset);
-
-        let event = NexusSpawnEvent::new(GOBLIN_WARRIOR, Kingdom::Monster);
-        events.send(event);
-
-        let sound = structure_assets.spawn_sound.get(Kingdom::Monster);
-        audio.play(sound).with_volume(0.1);
-    }
-}
 
 fn nexus_spawn_subjects(
     query: Query<(&Transform, &Kingdom), With<Nexus>>,
