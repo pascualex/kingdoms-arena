@@ -28,5 +28,5 @@ pub const ELVEN_SNIPER_BOW: BowBlueprint = BowBlueprint {
     range: 100.0,
     speed: 15.0,
     spread: 0.0,
-    recharge_seconds: 2.3,
+    recharge_seconds: 0.0,
 };
