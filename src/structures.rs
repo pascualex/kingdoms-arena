@@ -17,22 +17,13 @@ pub struct StructurePlugin;
 
 impl Plugin for StructurePlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<SpawnerEvent>()
-            .add_startup_system(load_assets)
+        app.init_resource::<StructureAssets>()
+            .add_event::<SpawnerEvent>()
             .add_startup_system(setup)
             .add_system(trigger_spawners)
             .add_system(tick_spawners)
             .add_system(check_traps.after(tick_spawners));
     }
-}
-
-fn load_assets(asset_server: Res<AssetServer>, mut commands: Commands) {
-    commands.insert_resource(StructureAssets {
-        spawn_sound: KingdomHandle {
-            elven: asset_server.load("sounds/elf_spawn.wav"),
-            monster: asset_server.load("sounds/monster_spawn.wav"),
-        },
-    });
 }
 
 fn setup(mut commands: Commands) {
@@ -107,6 +98,18 @@ fn setup(mut commands: Commands) {
 #[derive(Resource)]
 struct StructureAssets {
     spawn_sound: KingdomHandle<AudioSource>,
+}
+
+impl FromWorld for StructureAssets {
+    fn from_world(world: &mut World) -> Self {
+        let asset_server: &AssetServer = world.resource();
+        StructureAssets {
+            spawn_sound: KingdomHandle {
+                elven: asset_server.load("sounds/elf_spawn.wav"),
+                monster: asset_server.load("sounds/monster_spawn.wav"),
+            },
+        }
+    }
 }
 
 pub struct SpawnerEvent;

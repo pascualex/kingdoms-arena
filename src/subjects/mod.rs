@@ -1,7 +1,7 @@
 pub mod content;
 pub mod state;
 
-use bevy::{prelude::*, sprite::Anchor};
+use bevy::{ecs::system::SystemState, prelude::*, sprite::Anchor};
 use bevy_kira_audio::AudioSource;
 use bevy_rapier2d::prelude::*;
 
@@ -22,9 +22,9 @@ pub struct SubjectPlugin;
 impl Plugin for SubjectPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(SubjectStatePlugin)
+            .init_resource::<SubjectAssets>()
             .init_resource::<Frontlines>()
             .add_event::<SpawnEvent>()
-            .add_startup_system(load_assets)
             .add_system(spawn_subjects)
             .add_system(set_subject_velocities.after(UpdateSubjectState))
             .add_system(update_frontlines)
@@ -32,26 +32,34 @@ impl Plugin for SubjectPlugin {
     }
 }
 
-fn load_assets(
-    asset_server: Res<AssetServer>,
-    mut atlases: ResMut<Assets<TextureAtlas>>,
-    mut commands: Commands,
-) {
-    let sprite = asset_server.load("sprites/elven_archer.png");
-    let atlas = TextureAtlas::from_grid(sprite, Vec2::splat(20.0), 7, 3, Some(Vec2::ONE), None);
-    commands.insert_resource(SubjectAssets {
-        atlas: atlases.add(atlas),
-        death_sound: KingdomHandle {
-            elven: asset_server.load("sounds/elf_death.wav"),
-            monster: asset_server.load("sounds/monster_death.wav"),
-        },
-    });
-}
-
 #[derive(Resource)]
 pub struct SubjectAssets {
     pub atlas: Handle<TextureAtlas>,
     pub death_sound: KingdomHandle<AudioSource>,
+}
+
+impl FromWorld for SubjectAssets {
+    fn from_world(world: &mut World) -> Self {
+        let mut system_state: SystemState<(
+            Res<AssetServer>, //
+            ResMut<Assets<TextureAtlas>>,
+        )> = SystemState::new(world);
+        let (asset_server, mut atlases) = system_state.get_mut(world);
+        SubjectAssets {
+            atlas: atlases.add(TextureAtlas::from_grid(
+                asset_server.load("sprites/elven_archer.png"),
+                Vec2::splat(20.0),
+                7,
+                3,
+                Some(Vec2::ONE),
+                None,
+            )),
+            death_sound: KingdomHandle {
+                elven: asset_server.load("sounds/elf_death.wav"),
+                monster: asset_server.load("sounds/monster_death.wav"),
+            },
+        }
+    }
 }
 
 #[derive(Resource)]
