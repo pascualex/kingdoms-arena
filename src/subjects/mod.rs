@@ -215,7 +215,9 @@ pub fn spawn_subject(
 
     match &blueprint.weapon {
         WeaponsBlueprint::Sword => root_commands.insert(Sword),
-        WeaponsBlueprint::Bow(b) => root_commands.insert(Bow::new(b.range, b.recharge_seconds)),
+        WeaponsBlueprint::Bow(b) => {
+            root_commands.insert(Bow::new(b.range, b.speed, b.recharge_seconds))
+        }
     };
 
     root_commands.push_children(&[sprite_entity]);
