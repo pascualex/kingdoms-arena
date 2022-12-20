@@ -9,6 +9,7 @@ use crate::{
 pub struct SubjectBlueprint {
     pub name: &'static str,
     pub size: Vec2,
+    pub health: u32,
     pub speed: f32,
     pub weapon: WeaponsBlueprint,
     pub animations: SubjectAnimations,
@@ -17,6 +18,7 @@ pub struct SubjectBlueprint {
 pub const ELVEN_ARCHER: SubjectBlueprint = SubjectBlueprint {
     name: "Elven archer",
     size: Vec2::new(1.0, 1.625),
+    health: 1,
     speed: 1.5,
     weapon: WeaponsBlueprint::Bow(&ELVEN_BOW),
     animations: SubjectAnimations {
@@ -29,6 +31,7 @@ pub const ELVEN_ARCHER: SubjectBlueprint = SubjectBlueprint {
 pub const ELVEN_FAST_ARCHER: SubjectBlueprint = SubjectBlueprint {
     name: "Fast elven archer",
     size: Vec2::new(1.0, 1.625),
+    health: 1,
     speed: 3.5,
     weapon: WeaponsBlueprint::Bow(&ELVEN_FAST_BOW),
     animations: SubjectAnimations {
@@ -41,6 +44,7 @@ pub const ELVEN_FAST_ARCHER: SubjectBlueprint = SubjectBlueprint {
 pub const ELVEN_SNIPER_ARCHER: SubjectBlueprint = SubjectBlueprint {
     name: "Elven sniper archer",
     size: Vec2::new(1.0, 1.625),
+    health: 1,
     speed: 1.0,
     weapon: WeaponsBlueprint::Bow(&ELVEN_SNIPER_BOW),
     animations: SubjectAnimations {
@@ -53,6 +57,7 @@ pub const ELVEN_SNIPER_ARCHER: SubjectBlueprint = SubjectBlueprint {
 pub const GOBLIN_WARRIOR: SubjectBlueprint = SubjectBlueprint {
     name: "Goblin warrior",
     size: Vec2::new(1.0, 1.375),
+    health: 2,
     speed: 2.5,
     weapon: WeaponsBlueprint::Sword,
     animations: SubjectAnimations {
