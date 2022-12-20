@@ -46,7 +46,7 @@ pub const ELVEN_SNIPER_ARCHER: SubjectBlueprint = SubjectBlueprint {
     animations: SubjectAnimations {
         idle: Animation::new(0, 2, 0.6),
         moving: Animation::new(7, 4, 0.45),
-        shooting: Animation::new(14, 7, 0.2),
+        shooting: Animation::new(14, 7, 0.5),
     },
 };
 
