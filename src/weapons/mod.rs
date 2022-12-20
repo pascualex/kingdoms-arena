@@ -67,14 +67,19 @@ pub struct Sword;
 #[derive(Component)]
 pub struct Bow {
     pub range: f32,
+    pub speed: f32,
     pub timer: Timer,
 }
 
 impl Bow {
-    pub fn new(range: f32, recharge_seconds: f32) -> Self {
+    pub fn new(range: f32, speed: f32, recharge_seconds: f32) -> Self {
         let mut timer = Timer::from_seconds(recharge_seconds, TimerMode::Once);
         timer.set_elapsed(timer.duration());
-        Self { range, timer }
+        Self {
+            range,
+            speed,
+            timer,
+        }
     }
 }
 
@@ -148,9 +153,10 @@ fn shoot_bows(
         bow.timer.reset();
         shoot_arrow(
             bow_transform.translation,
+            bow.speed,
+            *kingdom,
             target_transform.translation,
             target_velocity.linvel,
-            *kingdom,
             &assets,
             &audio,
             &mut commands,
@@ -160,21 +166,22 @@ fn shoot_bows(
 
 fn shoot_arrow(
     bow_position: Vec3,
+    bow_speed: f32,
+    bow_kingdom: Kingdom,
     target_position: Vec3,
     target_velocity: Vec2,
-    kingdom: Kingdom,
     assets: &WeaponAssets,
     audio: &Audio,
     commands: &mut Commands,
 ) {
-    let position = match kingdom {
+    let position = match bow_kingdom {
         Kingdom::Elven => bow_position + Vec3::new(0.4, 0.0, 0.0),
         Kingdom::Monster => bow_position + Vec3::new(-0.4, 0.0, 0.0),
     };
 
     let diff = target_position - position;
     let random_offset = 0.85 + 0.3 * fastrand::f32();
-    let speed = 10.0 * random_offset;
+    let speed = bow_speed * random_offset;
     let velocity_x = speed * diff.x.signum();
     let relative_velocity_x = velocity_x - target_velocity.x;
     let random_offset = 0.75 + 0.75 * fastrand::f32();
@@ -184,7 +191,7 @@ fn shoot_arrow(
     let velocity_y = diff.y / flight_time + GRAVITY_ACCELERATION * flight_time / 2.0;
     let velocity = Vec2::new(velocity_x, velocity_y);
 
-    spawn_arrow(position, velocity, kingdom, assets, commands);
+    spawn_arrow(position, velocity, bow_kingdom, assets, commands);
 
     let sound = assets.bow_shot_sound.clone();
     audio.play(sound).with_volume(0.5);
