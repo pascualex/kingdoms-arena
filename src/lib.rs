@@ -5,6 +5,7 @@ mod collision;
 mod palette;
 mod structures;
 mod subjects;
+mod ui;
 mod weapons;
 
 use bevy::{
@@ -13,7 +14,7 @@ use bevy::{
 };
 
 use self::{
-    animation::AnimationPlugin, structures::StructurePlugin, subjects::SubjectPlugin,
+    animation::AnimationPlugin, structures::StructurePlugin, subjects::SubjectPlugin, ui::UiPlugin,
     weapons::WeaponPlugin,
 };
 
@@ -33,6 +34,7 @@ impl Plugin for AppPlugin {
         app.add_plugin(AnimationPlugin)
             .add_plugin(StructurePlugin)
             .add_plugin(SubjectPlugin)
+            .add_plugin(UiPlugin)
             .add_plugin(WeaponPlugin)
             .add_state(AppState::Game)
             .add_startup_system(setup);
