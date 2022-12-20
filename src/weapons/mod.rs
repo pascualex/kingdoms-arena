@@ -19,8 +19,8 @@ pub struct WeaponPlugin;
 
 impl Plugin for WeaponPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<ShotEvent>()
-            .add_startup_system(load_assets)
+        app.init_resource::<WeaponAssets>()
+            .add_event::<ShotEvent>()
             .add_system(swing_subject_swords.before(despawn_dead_subjects))
             .add_system(tick_bows)
             .add_system(shoot_bows.after(tick_bows).after(UpdateSubjectState))
@@ -36,19 +36,22 @@ impl Plugin for WeaponPlugin {
     }
 }
 
-fn load_assets(asset_server: Res<AssetServer>, mut commands: Commands) {
-    commands.insert_resource(WeaponAssets {
-        arrow_sprite: asset_server.load("sprites/elven_arrow.png"),
-        arrow_ground_hit_sound: asset_server.load("sounds/arrow_ground_hit.wav"),
-        bow_shot_sound: asset_server.load("sounds/bow_shot.wav"),
-    });
-}
-
 #[derive(Resource)]
 struct WeaponAssets {
     arrow_sprite: Handle<Image>,
     arrow_ground_hit_sound: Handle<AudioSource>,
     bow_shot_sound: Handle<AudioSource>,
+}
+
+impl FromWorld for WeaponAssets {
+    fn from_world(world: &mut World) -> Self {
+        let asset_server: &AssetServer = world.resource();
+        WeaponAssets {
+            arrow_sprite: asset_server.load("sprites/elven_arrow.png"),
+            arrow_ground_hit_sound: asset_server.load("sounds/arrow_ground_hit.wav"),
+            bow_shot_sound: asset_server.load("sounds/bow_shot.wav"),
+        }
+    }
 }
 
 pub struct ShotEvent {
