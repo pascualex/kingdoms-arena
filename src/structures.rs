@@ -7,8 +7,8 @@ use bevy_rapier2d::prelude::*;
 use crate::{
     collision::{intersections_with, ColliderBundle},
     subjects::{
-        content::{SubjectBlueprint, ELVEN_ARCHER, GOBLIN_WARRIOR},
-        Health, SpawnEvent, Subject,
+        content::{SubjectBlueprint, GOBLIN_WARRIOR},
+        spawn_subjects, Health, SpawnEvent, Subject,
     },
     Kingdom, KingdomHandle, SKY_HEIGHT, WORLD_EXTENSION,
 };
@@ -18,18 +18,19 @@ pub struct StructurePlugin;
 impl Plugin for StructurePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<StructureAssets>()
-            .add_event::<SpawnerEvent>()
+            .insert_resource(AiPlayer::new(0.5))
+            .add_event::<NexusSpawnEvent>()
             .add_startup_system(setup)
-            .add_system(trigger_spawners)
-            .add_system(tick_spawners)
-            .add_system(check_traps.after(tick_spawners));
+            .add_system(tick_ai_player)
+            .add_system(nexus_spawn_subjects)
+            .add_system(check_traps.after(spawn_subjects));
     }
 }
 
 fn setup(mut commands: Commands) {
     // spawners
     commands.spawn((
-        Name::new("Elven spawner"),
+        Name::new("Elven nexus"),
         SpriteBundle {
             sprite: Sprite {
                 color: Color::rgba(0.2, 0.1, 0.1, 0.5),
@@ -41,11 +42,10 @@ fn setup(mut commands: Commands) {
             ..default()
         },
         Kingdom::Elven,
-        Spawner::new(ELVEN_ARCHER),
-        SpawnerEventListener,
+        Nexus,
     ));
     commands.spawn((
-        Name::new("Monster spawner"),
+        Name::new("Monster nexus"),
         SpriteBundle {
             sprite: Sprite {
                 color: Color::rgba(0.2, 0.1, 0.1, 0.5),
@@ -57,8 +57,7 @@ fn setup(mut commands: Commands) {
             ..default()
         },
         Kingdom::Monster,
-        Spawner::new(GOBLIN_WARRIOR),
-        SpawnerTicker::new(0.5),
+        Nexus,
     ));
     // traps
     commands.spawn((
@@ -112,30 +111,14 @@ impl FromWorld for StructureAssets {
     }
 }
 
-pub struct SpawnerEvent;
-
-#[derive(Component)]
-struct Spawner {
-    subject_blueprint: SubjectBlueprint,
-}
-
-impl Spawner {
-    fn new(subject_blueprint: SubjectBlueprint) -> Self {
-        Self { subject_blueprint }
-    }
-}
-
-#[derive(Component)]
-struct SpawnerEventListener;
-
-#[derive(Component)]
-struct SpawnerTicker {
+#[derive(Resource)]
+struct AiPlayer {
     stopwatch: Stopwatch,
     average_interval: Duration,
     next_interval: Duration,
 }
 
-impl SpawnerTicker {
+impl AiPlayer {
     fn new(interval_seconds: f32) -> Self {
         Self {
             stopwatch: Stopwatch::new(),
@@ -145,48 +128,62 @@ impl SpawnerTicker {
     }
 }
 
-#[derive(Component)]
-struct Trap;
+pub struct NexusSpawnEvent {
+    pub blueprint: SubjectBlueprint,
+    pub kingdom: Kingdom,
+}
 
-fn trigger_spawners(
-    query: Query<(&Transform, &Kingdom, &Spawner), With<SpawnerEventListener>>,
-    mut spawner_events: EventReader<SpawnerEvent>,
-    mut spawn_events: EventWriter<SpawnEvent>,
-    structure_assets: Res<StructureAssets>,
-    audio: Res<Audio>,
-) {
-    for _ in spawner_events.iter() {
-        for (transform, kingdom, spawner) in &query {
-            let blueprint = spawner.subject_blueprint.clone();
-            let event = SpawnEvent::new(blueprint, transform.translation, *kingdom);
-            spawn_events.send(event);
-
-            let sound = structure_assets.spawn_sound.get(*kingdom);
-            audio.play(sound).with_volume(0.1);
-        }
+impl NexusSpawnEvent {
+    pub fn new(blueprint: SubjectBlueprint, kingdom: Kingdom) -> Self {
+        Self { blueprint, kingdom }
     }
 }
 
-fn tick_spawners(
-    mut query: Query<(&Transform, &Kingdom, &Spawner, &mut SpawnerTicker)>,
-    mut events: EventWriter<SpawnEvent>,
+#[derive(Component)]
+struct Nexus;
+
+#[derive(Component)]
+struct Trap;
+
+fn tick_ai_player(
+    mut ai_player: ResMut<AiPlayer>,
+    mut events: EventWriter<NexusSpawnEvent>,
     time: Res<Time>,
     structure_assets: Res<StructureAssets>,
     audio: Res<Audio>,
 ) {
-    for (transform, kingdom, spawner, mut ticker) in &mut query {
-        ticker.stopwatch.tick(time.delta());
+    ai_player.stopwatch.tick(time.delta());
+    while ai_player.stopwatch.elapsed() >= ai_player.next_interval {
+        let remaining = ai_player.stopwatch.elapsed() - ai_player.next_interval;
+        ai_player.stopwatch.set_elapsed(remaining);
 
-        while ticker.stopwatch.elapsed() >= ticker.next_interval {
-            let remaining = ticker.stopwatch.elapsed() - ticker.next_interval;
-            ticker.stopwatch.set_elapsed(remaining);
+        let random_offset = 0.5 + fastrand::f32();
+        ai_player.next_interval = ai_player.average_interval.mul_f32(random_offset);
 
-            let random_offset = 0.5 + fastrand::f32();
-            ticker.next_interval = ticker.average_interval.mul_f32(random_offset);
+        let event = NexusSpawnEvent::new(GOBLIN_WARRIOR, Kingdom::Monster);
+        events.send(event);
 
-            let blueprint = spawner.subject_blueprint.clone();
+        let sound = structure_assets.spawn_sound.get(Kingdom::Monster);
+        audio.play(sound).with_volume(0.1);
+    }
+}
+
+fn nexus_spawn_subjects(
+    query: Query<(&Transform, &Kingdom), With<Nexus>>,
+    mut nexus_spawn_events: EventReader<NexusSpawnEvent>,
+    mut spawn_events: EventWriter<SpawnEvent>,
+    structure_assets: Res<StructureAssets>,
+    audio: Res<Audio>,
+) {
+    for nexus_spawn_event in nexus_spawn_events.iter() {
+        for (transform, kingdom) in &query {
+            if *kingdom != nexus_spawn_event.kingdom {
+                continue;
+            }
+
+            let blueprint = nexus_spawn_event.blueprint.clone();
             let event = SpawnEvent::new(blueprint, transform.translation, *kingdom);
-            events.send(event);
+            spawn_events.send(event);
 
             let sound = structure_assets.spawn_sound.get(*kingdom);
             audio.play(sound).with_volume(0.1);
