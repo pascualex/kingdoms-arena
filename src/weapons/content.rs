@@ -4,6 +4,7 @@ pub enum WeaponsBlueprint {
 }
 
 pub struct BowBlueprint {
+    pub damage: u32,
     pub range: f32,
     pub speed: f32,
     pub spread: f32,
@@ -11,6 +12,7 @@ pub struct BowBlueprint {
 }
 
 pub const ELVEN_BOW: BowBlueprint = BowBlueprint {
+    damage: 1,
     range: 15.0,
     speed: 15.0,
     spread: 1.5,
@@ -18,6 +20,7 @@ pub const ELVEN_BOW: BowBlueprint = BowBlueprint {
 };
 
 pub const ELVEN_FAST_BOW: BowBlueprint = BowBlueprint {
+    damage: 1,
     range: 10.0,
     speed: 25.0,
     spread: 2.0,
@@ -25,6 +28,7 @@ pub const ELVEN_FAST_BOW: BowBlueprint = BowBlueprint {
 };
 
 pub const ELVEN_SNIPER_BOW: BowBlueprint = BowBlueprint {
+    damage: 2,
     range: 100.0,
     speed: 15.0,
     spread: 0.0,
