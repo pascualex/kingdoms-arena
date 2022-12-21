@@ -7,6 +7,7 @@ mod palette;
 mod structures;
 mod subjects;
 mod ui;
+mod units;
 mod weapons;
 
 use bevy::{
@@ -16,7 +17,7 @@ use bevy::{
 
 use self::{
     ai::AiPlugin, animation::AnimationPlugin, structures::StructurePlugin, subjects::SubjectPlugin,
-    ui::UiPlugin, weapons::WeaponPlugin,
+    ui::UiPlugin, units::UnitPlugin, weapons::WeaponPlugin,
 };
 
 // perfect pixel art: 360.0 / 22.5 = 16.0
@@ -37,6 +38,7 @@ impl Plugin for AppPlugin {
             .add_plugin(StructurePlugin)
             .add_plugin(SubjectPlugin)
             .add_plugin(UiPlugin)
+            .add_plugin(UnitPlugin)
             .add_plugin(WeaponPlugin)
             .add_state(AppState::Game)
             .add_startup_system(setup);

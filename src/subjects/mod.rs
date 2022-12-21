@@ -2,12 +2,13 @@ pub mod content;
 pub mod state;
 
 use bevy::{ecs::system::SystemState, prelude::*, sprite::Anchor};
-use bevy_kira_audio::AudioSource;
+use bevy_kira_audio::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use crate::{
     animation::{Animation, AnimationMode, AnimationPlayer},
     collision::ColliderBundle,
+    units::Health,
     weapons::{content::WeaponsBlueprint, Bow, Sword},
     Kingdom, KingdomHandle, PX_PER_METER,
 };
@@ -17,25 +18,29 @@ use self::{
     state::{MovingState, SubjectStatePlugin, UpdateSubjectState},
 };
 
+#[derive(SystemLabel)]
+pub struct SpawnSubjects;
+
+#[derive(SystemLabel)]
+pub struct DamageSubjects;
+
 pub struct SubjectPlugin;
 
 impl Plugin for SubjectPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(SubjectStatePlugin)
             .init_resource::<SubjectAssets>()
-            .init_resource::<Frontlines>()
             .add_event::<SpawnEvent>()
-            .add_system(spawn_subjects)
+            .add_system(spawn_subjects.label(SpawnSubjects))
             .add_system(set_subject_velocities.after(UpdateSubjectState))
-            .add_system(update_frontlines)
-            .add_system(despawn_dead_subjects);
+            .add_system(despawn_dead_subjects.after(DamageSubjects));
     }
 }
 
 #[derive(Resource)]
-pub struct SubjectAssets {
-    pub atlas: Handle<TextureAtlas>,
-    pub death_sound: KingdomHandle<AudioSource>,
+struct SubjectAssets {
+    atlas: Handle<TextureAtlas>,
+    death_sound: KingdomHandle<AudioSource>,
 }
 
 impl FromWorld for SubjectAssets {
@@ -62,32 +67,6 @@ impl FromWorld for SubjectAssets {
     }
 }
 
-#[derive(Resource)]
-pub struct Frontlines {
-    pub elven: Frontline,
-    pub monster: Frontline,
-}
-
-impl Default for Frontlines {
-    fn default() -> Self {
-        Self {
-            elven: Frontline {
-                position: f32::NEG_INFINITY,
-                entity: None,
-            },
-            monster: Frontline {
-                position: f32::INFINITY,
-                entity: None,
-            },
-        }
-    }
-}
-
-pub struct Frontline {
-    pub position: f32,
-    pub entity: Option<Entity>,
-}
-
 pub struct SpawnEvent {
     pub blueprint: &'static SubjectBlueprint,
     pub position: Vec3,
@@ -107,29 +86,6 @@ impl SpawnEvent {
 #[derive(Component)]
 pub struct Subject;
 
-#[derive(Component)]
-pub struct Health {
-    current: u32,
-}
-
-impl Health {
-    pub fn new(initial: u32) -> Self {
-        Self { current: initial }
-    }
-
-    pub fn damage(&mut self, amount: u32) {
-        self.current = self.current.saturating_sub(amount);
-    }
-
-    pub fn kill(&mut self) {
-        self.current = 0;
-    }
-
-    pub fn is_dead(&self) -> bool {
-        self.current == 0
-    }
-}
-
 #[derive(Component, Deref, DerefMut)]
 pub struct Speed(pub f32);
 
@@ -140,7 +96,7 @@ pub struct SubjectAnimations {
     shooting: Animation,
 }
 
-pub fn spawn_subjects(
+fn spawn_subjects(
     mut events: EventReader<SpawnEvent>,
     assets: Res<SubjectAssets>,
     mut commands: Commands,
@@ -200,13 +156,18 @@ pub fn spawn_subjects(
     }
 }
 
-pub fn despawn_dead_subjects(
-    query: Query<(Entity, &Health), With<Subject>>,
+fn despawn_dead_subjects(
+    query: Query<(Entity, &Kingdom, &Health), With<Subject>>,
+    subject_assets: Res<SubjectAssets>,
+    audio: Res<Audio>,
     mut commands: Commands,
 ) {
-    for (entity, health) in &query {
+    for (entity, kingdom, health) in &query {
         if health.is_dead() {
             commands.entity(entity).despawn_recursive();
+
+            let sound = subject_assets.death_sound.get(*kingdom);
+            audio.play(sound).with_volume(0.2);
         }
     }
 }
@@ -222,33 +183,5 @@ fn set_subject_velocities(
             },
             None => 0.0,
         };
-    }
-}
-
-fn update_frontlines(
-    query: Query<(Entity, &Transform, &Kingdom), With<Subject>>,
-    mut frontlines: ResMut<Frontlines>,
-) {
-    frontlines.elven.position = f32::NEG_INFINITY;
-    frontlines.monster.position = f32::INFINITY;
-
-    frontlines.elven.entity = None;
-    frontlines.monster.entity = None;
-
-    for (entity, transform, kingdom) in &query {
-        match kingdom {
-            Kingdom::Elven => {
-                if transform.translation.x > frontlines.elven.position {
-                    frontlines.elven.position = transform.translation.x;
-                    frontlines.elven.entity = Some(entity);
-                }
-            }
-            Kingdom::Monster => {
-                if transform.translation.x < frontlines.monster.position {
-                    frontlines.monster.position = transform.translation.x;
-                    frontlines.monster.entity = Some(entity);
-                }
-            }
-        }
     }
 }
