@@ -35,7 +35,16 @@ fn spawn_subject_panel(mut commands: Commands) {
     let root = (
         NodeBundle {
             style: Style {
-                margin: UiRect::new(Val::Auto, Val::Auto, Val::Auto, Val::Px(40.0)),
+                position_type: PositionType::Absolute,
+                position: UiRect {
+                    bottom: Val::Px(40.0),
+                    ..default()
+                },
+                size: Size {
+                    width: Val::Percent(100.0),
+                    ..default()
+                },
+                justify_content: JustifyContent::Center,
                 // TODO: add gap when bevy upgrades to taffy v0.2
                 ..default()
             },
@@ -58,7 +67,11 @@ fn spawn_subject_panel(mut commands: Commands) {
         ButtonBundle {
             style: Style {
                 size: Size::new(Val::Px(80.0), Val::Px(80.0)),
-                margin: UiRect::new(Val::Px(20.0), Val::Px(20.0), Val::Undefined, Val::Undefined),
+                margin: UiRect {
+                    left: Val::Px(20.0),
+                    right: Val::Px(20.0),
+                    ..default()
+                },
                 ..default()
             },
             background_color: palette::DARK_YELLOW.into(),

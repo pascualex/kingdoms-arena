@@ -13,7 +13,7 @@ impl Plugin for StartMenuPlugin {
 }
 
 #[derive(Component)]
-struct StartMenuPanel;
+struct StartMenu;
 
 #[derive(Component)]
 struct StartGameButton;
@@ -22,14 +22,23 @@ fn spawn_start_menu(mut commands: Commands) {
     let root = (
         NodeBundle {
             style: Style {
-                margin: UiRect::new(Val::Auto, Val::Auto, Val::Auto, Val::Px(40.0)),
+                position_type: PositionType::Absolute,
+                position: UiRect {
+                    bottom: Val::Px(40.0),
+                    ..default()
+                },
+                size: Size {
+                    width: Val::Percent(100.0),
+                    ..default()
+                },
+                justify_content: JustifyContent::Center,
                 ..default()
             },
             ..default()
         },
-        StartMenuPanel,
+        StartMenu,
     );
-    let button_1 = (
+    let start_game_button = (
         ButtonBundle {
             style: Style {
                 size: Size::new(Val::Px(80.0), Val::Px(80.0)),
@@ -41,11 +50,11 @@ fn spawn_start_menu(mut commands: Commands) {
         StartGameButton,
     );
     commands.spawn(root).with_children(|builder| {
-        builder.spawn(button_1);
+        builder.spawn(start_game_button);
     });
 }
 
-fn despawn_start_menu(query: Query<Entity, With<StartMenuPanel>>, mut commands: Commands) {
+fn despawn_start_menu(query: Query<Entity, With<StartMenu>>, mut commands: Commands) {
     let entity = query.single();
     commands.entity(entity).despawn_recursive();
 }
