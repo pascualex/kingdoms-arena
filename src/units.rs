@@ -51,10 +51,6 @@ impl Health {
         self.current = self.current.saturating_sub(amount);
     }
 
-    pub fn kill(&mut self) {
-        self.current = 0;
-    }
-
     pub fn is_dead(&self) -> bool {
         self.current == 0
     }

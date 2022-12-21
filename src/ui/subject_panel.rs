@@ -4,37 +4,45 @@ use crate::{
     palette,
     structures::NexusSpawnEvent,
     subjects::content::{SubjectBlueprint, ELVEN_ARCHER, ELVEN_FAST_ARCHER, ELVEN_SNIPER_ARCHER},
-    Kingdom,
+    AppState, Kingdom,
 };
 
-pub struct UiPlugin;
+pub struct SubjectPanelPlugin;
 
-impl Plugin for UiPlugin {
+impl Plugin for SubjectPanelPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(setup).add_system(spawn_on_click);
+        app.add_system_set(SystemSet::on_enter(AppState::Game).with_system(spawn_subject_panel))
+            .add_system_set(SystemSet::on_exit(AppState::Game).with_system(despawn_subject_panel))
+            .add_system(spawn_subject_on_click);
     }
 }
 
 #[derive(Component)]
-struct SpawnButton {
+struct SubjectPanel;
+
+#[derive(Component)]
+struct SubjectButton {
     blueprint: &'static SubjectBlueprint,
 }
 
-impl SpawnButton {
+impl SubjectButton {
     pub fn new(blueprint: &'static SubjectBlueprint) -> Self {
         Self { blueprint }
     }
 }
 
-fn setup(mut commands: Commands) {
-    let root = NodeBundle {
-        style: Style {
-            margin: UiRect::new(Val::Auto, Val::Auto, Val::Auto, Val::Px(40.0)),
-            // TODO: add gap when bevy upgrades to taffy v0.2
+fn spawn_subject_panel(mut commands: Commands) {
+    let root = (
+        NodeBundle {
+            style: Style {
+                margin: UiRect::new(Val::Auto, Val::Auto, Val::Auto, Val::Px(40.0)),
+                // TODO: add gap when bevy upgrades to taffy v0.2
+                ..default()
+            },
             ..default()
         },
-        ..default()
-    };
+        SubjectPanel,
+    );
     let button_1 = (
         ButtonBundle {
             style: Style {
@@ -44,7 +52,7 @@ fn setup(mut commands: Commands) {
             background_color: palette::DARK_BLUE.into(),
             ..default()
         },
-        SpawnButton::new(&ELVEN_ARCHER),
+        SubjectButton::new(&ELVEN_ARCHER),
     );
     let button_2 = (
         ButtonBundle {
@@ -56,7 +64,7 @@ fn setup(mut commands: Commands) {
             background_color: palette::DARK_YELLOW.into(),
             ..default()
         },
-        SpawnButton::new(&ELVEN_FAST_ARCHER),
+        SubjectButton::new(&ELVEN_FAST_ARCHER),
     );
     let button_3 = (
         ButtonBundle {
@@ -67,7 +75,7 @@ fn setup(mut commands: Commands) {
             background_color: palette::DARK_ORANGE.into(),
             ..default()
         },
-        SpawnButton::new(&ELVEN_SNIPER_ARCHER),
+        SubjectButton::new(&ELVEN_SNIPER_ARCHER),
     );
     commands.spawn(root).with_children(|builder| {
         builder.spawn(button_1);
@@ -76,8 +84,13 @@ fn setup(mut commands: Commands) {
     });
 }
 
-fn spawn_on_click(
-    query: Query<(&Interaction, &SpawnButton), Changed<Interaction>>,
+fn despawn_subject_panel(query: Query<Entity, With<SubjectPanel>>, mut commands: Commands) {
+    let entity = query.single();
+    commands.entity(entity).despawn_recursive();
+}
+
+fn spawn_subject_on_click(
+    query: Query<(&Interaction, &SubjectButton), Changed<Interaction>>,
     mut events: EventWriter<NexusSpawnEvent>,
 ) {
     for (interaction, spawn) in &query {

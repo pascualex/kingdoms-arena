@@ -3,10 +3,10 @@ use bevy_kira_audio::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use crate::{
-    collision::{intersections_with, ColliderBundle},
-    subjects::{content::SubjectBlueprint, SpawnEvent, SpawnSubjects, Subject},
+    collision::ColliderBundle,
+    subjects::{content::SubjectBlueprint, SpawnEvent},
     units::Health,
-    Kingdom, KingdomHandle, SKY_HEIGHT, WORLD_EXTENSION,
+    AppState, Kingdom, KingdomHandle, WORLD_EXTENSION,
 };
 
 pub struct StructurePlugin;
@@ -15,14 +15,45 @@ impl Plugin for StructurePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<StructureAssets>()
             .add_event::<NexusSpawnEvent>()
-            .add_startup_system(setup)
-            .add_system(nexus_spawn_subjects)
-            .add_system(check_traps.after(SpawnSubjects));
+            .add_system_set(SystemSet::on_enter(AppState::Game).with_system(spawn_nexuses))
+            .add_system_set(SystemSet::on_exit(AppState::Game).with_system(despawn_nexuses))
+            .add_system(spawn_subjects_at_nexuses)
+            .add_system(finish_game_on_destroyed_nexus);
     }
 }
 
-fn setup(mut commands: Commands) {
-    // spawners
+#[derive(Resource)]
+struct StructureAssets {
+    spawn_sound: KingdomHandle<AudioSource>,
+}
+
+impl FromWorld for StructureAssets {
+    fn from_world(world: &mut World) -> Self {
+        let asset_server: &AssetServer = world.resource();
+        StructureAssets {
+            spawn_sound: KingdomHandle {
+                elven: asset_server.load("sounds/elf_spawn.wav"),
+                monster: asset_server.load("sounds/monster_spawn.wav"),
+            },
+        }
+    }
+}
+
+pub struct NexusSpawnEvent {
+    pub blueprint: &'static SubjectBlueprint,
+    pub kingdom: Kingdom,
+}
+
+impl NexusSpawnEvent {
+    pub fn new(blueprint: &'static SubjectBlueprint, kingdom: Kingdom) -> Self {
+        Self { blueprint, kingdom }
+    }
+}
+
+#[derive(Component)]
+struct Nexus;
+
+fn spawn_nexuses(mut commands: Commands) {
     commands.spawn((
         Name::new("Elven nexus"),
         SpriteBundle {
@@ -57,76 +88,15 @@ fn setup(mut commands: Commands) {
         Health::new(50),
         Nexus,
     ));
-    // traps
-    commands.spawn((
-        Name::new("Elven trap"),
-        SpriteBundle {
-            sprite: Sprite {
-                color: Color::rgba(0.1, 0.1, 0.1, 0.1),
-                custom_size: Some(Vec2::new(10.0, SKY_HEIGHT)),
-                ..default()
-            },
-            transform: Transform::from_xyz(-WORLD_EXTENSION + 6.0, SKY_HEIGHT / 2.0, 0.0),
-            ..default()
-        },
-        RigidBody::Fixed,
-        ColliderBundle::new(Collider::cuboid(5.0, SKY_HEIGHT / 2.0)),
-        Kingdom::Elven,
-        Trap,
-    ));
-    commands.spawn((
-        Name::new("Monster trap"),
-        SpriteBundle {
-            sprite: Sprite {
-                color: Color::rgba(0.1, 0.1, 0.1, 0.1),
-                custom_size: Some(Vec2::new(10.0, SKY_HEIGHT)),
-                ..default()
-            },
-            transform: Transform::from_xyz(WORLD_EXTENSION - 6.0, SKY_HEIGHT / 2.0, 0.0),
-            ..default()
-        },
-        RigidBody::Fixed,
-        ColliderBundle::new(Collider::cuboid(5.0, SKY_HEIGHT / 2.0)),
-        Kingdom::Monster,
-        Trap,
-    ));
 }
 
-#[derive(Resource)]
-struct StructureAssets {
-    spawn_sound: KingdomHandle<AudioSource>,
-}
-
-impl FromWorld for StructureAssets {
-    fn from_world(world: &mut World) -> Self {
-        let asset_server: &AssetServer = world.resource();
-        StructureAssets {
-            spawn_sound: KingdomHandle {
-                elven: asset_server.load("sounds/elf_spawn.wav"),
-                monster: asset_server.load("sounds/monster_spawn.wav"),
-            },
-        }
+fn despawn_nexuses(query: Query<Entity, With<Nexus>>, mut commands: Commands) {
+    for entity in &query {
+        commands.entity(entity).despawn_recursive();
     }
 }
 
-pub struct NexusSpawnEvent {
-    pub blueprint: &'static SubjectBlueprint,
-    pub kingdom: Kingdom,
-}
-
-impl NexusSpawnEvent {
-    pub fn new(blueprint: &'static SubjectBlueprint, kingdom: Kingdom) -> Self {
-        Self { blueprint, kingdom }
-    }
-}
-
-#[derive(Component)]
-struct Nexus;
-
-#[derive(Component)]
-struct Trap;
-
-fn nexus_spawn_subjects(
+fn spawn_subjects_at_nexuses(
     query: Query<(&Transform, &Kingdom), With<Nexus>>,
     mut nexus_spawn_events: EventReader<NexusSpawnEvent>,
     mut spawn_events: EventWriter<SpawnEvent>,
@@ -152,32 +122,13 @@ fn nexus_spawn_subjects(
     }
 }
 
-fn check_traps(
-    trap_query: Query<(Entity, &Kingdom), With<Trap>>,
-    trigger_query: Query<&Kingdom, With<Subject>>,
-    mut health_query: Query<(&Kingdom, &mut Health), With<Subject>>,
-    context: Res<RapierContext>,
-    audio: Res<Audio>,
-    asset_server: Res<AssetServer>,
+fn finish_game_on_destroyed_nexus(
+    query: Query<&Health, With<Nexus>>,
+    mut state: ResMut<State<AppState>>,
 ) {
-    for (trap_entity, trap_kingdom) in &trap_query {
-        for trigger_entity in intersections_with(trap_entity, &context) {
-            let Ok(trigger_kingdom) = trigger_query.get(trigger_entity) else {
-                continue;
-            };
-
-            if trigger_kingdom == trap_kingdom {
-                continue;
-            }
-
-            for (subject_kingdom, mut health) in &mut health_query {
-                if subject_kingdom == trigger_kingdom {
-                    health.kill();
-                }
-            }
-
-            let sound = asset_server.load("sounds/wipe_out.wav");
-            audio.play(sound).with_volume(0.5);
+    for health in &query {
+        if health.is_dead() {
+            state.set(AppState::Menu).unwrap();
         }
     }
 }
