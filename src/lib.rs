@@ -41,6 +41,7 @@ impl Plugin for AppPlugin {
             .add_plugin(UnitPlugin)
             .add_plugin(WeaponPlugin)
             .add_state(AppState::Menu)
+            .init_resource::<Coins>()
             .add_startup_system(setup);
     }
 }
@@ -49,6 +50,11 @@ impl Plugin for AppPlugin {
 enum AppState {
     Menu,
     Game,
+}
+
+#[derive(Resource, Default)]
+struct Coins {
+    elven: u32,
 }
 
 #[derive(Component, PartialEq, Eq, Clone, Copy)]
