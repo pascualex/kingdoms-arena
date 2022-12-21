@@ -40,14 +40,35 @@ impl Plugin for AppPlugin {
             .add_plugin(UiPlugin)
             .add_plugin(UnitPlugin)
             .add_plugin(WeaponPlugin)
-            .add_state(AppState::Game)
+            .add_state(AppState::Menu)
             .add_startup_system(setup);
     }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 enum AppState {
+    Menu,
     Game,
+}
+
+#[derive(Component, PartialEq, Eq, Clone, Copy)]
+pub enum Kingdom {
+    Elven,
+    Monster,
+}
+
+pub struct KingdomHandle<T: Asset> {
+    pub elven: Handle<T>,
+    pub monster: Handle<T>,
+}
+
+impl<T: Asset> KingdomHandle<T> {
+    pub fn get(&self, kingdom: Kingdom) -> Handle<T> {
+        match kingdom {
+            Kingdom::Elven => self.elven.clone(),
+            Kingdom::Monster => self.monster.clone(),
+        }
+    }
 }
 
 fn setup(mut commands: Commands) {
@@ -77,24 +98,4 @@ fn setup(mut commands: Commands) {
             ..default()
         },
     ));
-}
-
-#[derive(Component, PartialEq, Eq, Clone, Copy)]
-pub enum Kingdom {
-    Elven,
-    Monster,
-}
-
-pub struct KingdomHandle<T: Asset> {
-    pub elven: Handle<T>,
-    pub monster: Handle<T>,
-}
-
-impl<T: Asset> KingdomHandle<T> {
-    pub fn get(&self, kingdom: Kingdom) -> Handle<T> {
-        match kingdom {
-            Kingdom::Elven => self.elven.clone(),
-            Kingdom::Monster => self.monster.clone(),
-        }
-    }
 }

@@ -8,7 +8,7 @@ use crate::{
     collision::{intersections_with, ColliderBundle},
     subjects::{state::UpdateSubjectState, DamageSubjects, Subject},
     units::{Frontlines, Health},
-    Kingdom, GRAVITY_ACCELERATION, PX_PER_METER,
+    AppState, Kingdom, GRAVITY_ACCELERATION, PX_PER_METER,
 };
 
 pub const MAX_ARROW_DEPTH: f32 = 0.125;
@@ -19,7 +19,8 @@ impl Plugin for WeaponPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<WeaponAssets>()
             .add_event::<ShotEvent>()
-            .add_system(swing_subject_swords.label(DamageSubjects))
+            .add_system_set(SystemSet::on_exit(AppState::Game).with_system(despawn_arrows))
+            .add_system(swing_swords.label(DamageSubjects))
             .add_system(tick_bows)
             .add_system(shoot_bows.after(tick_bows).after(UpdateSubjectState))
             .add_system(accelerate_arrows.after(shoot_bows))
@@ -28,7 +29,7 @@ impl Plugin for WeaponPlugin {
                 collide_arrows
                     .label(DamageSubjects)
                     .after(accelerate_arrows)
-                    .after(swing_subject_swords),
+                    .after(swing_swords),
             )
             .add_system(despawn_lifetimes.after(shoot_bows));
     }
@@ -91,11 +92,15 @@ impl Bow {
 #[derive(Component)]
 struct Arrow {
     damage: u32,
+    is_grounded: bool,
 }
 
 impl Arrow {
     pub fn new(damage: u32) -> Self {
-        Self { damage }
+        Self {
+            damage,
+            is_grounded: false,
+        }
     }
 }
 
@@ -112,9 +117,9 @@ impl Lifetime {
     }
 }
 
-fn swing_subject_swords(
-    sword_query: Query<(Entity, &Kingdom), (With<Subject>, With<Sword>)>,
-    mut health_query: Query<(&Kingdom, &mut Health), With<Subject>>,
+fn swing_swords(
+    sword_query: Query<(Entity, &Kingdom), With<Sword>>,
+    mut health_query: Query<(&Kingdom, &mut Health)>,
     context: Res<RapierContext>,
 ) {
     for (sword_entity, sword_kingdom) in &sword_query {
@@ -192,9 +197,17 @@ fn shoot_bows(
     }
 }
 
-fn accelerate_arrows(mut query: Query<&mut Velocity, With<Arrow>>, time: Res<Time>) {
-    for mut velocity in &mut query {
-        velocity.linvel.y -= GRAVITY_ACCELERATION * time.delta_seconds();
+fn despawn_arrows(query: Query<Entity, With<Arrow>>, mut commands: Commands) {
+    for entity in &query {
+        commands.entity(entity).despawn_recursive();
+    }
+}
+
+fn accelerate_arrows(mut query: Query<(&mut Velocity, &Arrow)>, time: Res<Time>) {
+    for (mut velocity, arrow) in &mut query {
+        if !arrow.is_grounded {
+            velocity.linvel.y -= GRAVITY_ACCELERATION * time.delta_seconds();
+        }
     }
 }
 
@@ -208,19 +221,22 @@ fn rotate_arrows(mut query: Query<(&mut Transform, &Velocity), With<Arrow>>) {
 }
 
 fn collide_arrows(
-    mut arrow_query: Query<(Entity, &mut Transform, &mut Velocity, &Kingdom, &Arrow)>,
+    mut arrow_query: Query<(Entity, &mut Transform, &mut Velocity, &Kingdom, &mut Arrow)>,
     mut health_query: Query<(&Kingdom, &mut Health)>,
     context: Res<RapierContext>,
     weapon_assets: Res<WeaponAssets>,
     audio: Res<Audio>,
     mut commands: Commands,
 ) {
-    for (arrow_entity, mut transform, mut velocity, arrow_kingdom, arrow) in &mut arrow_query {
+    for (arrow_entity, mut transform, mut velocity, arrow_kingdom, mut arrow) in &mut arrow_query {
+        if arrow.is_grounded {
+            continue;
+        }
+
         if transform.translation.y <= -MAX_ARROW_DEPTH {
             transform.translation.y = -MAX_ARROW_DEPTH;
             velocity.linvel = Vec2::ZERO;
-
-            commands.entity(arrow_entity).remove::<Arrow>();
+            arrow.is_grounded = true;
 
             let sound = weapon_assets.arrow_ground_hit_sound.clone();
             audio.play(sound).with_volume(0.15);

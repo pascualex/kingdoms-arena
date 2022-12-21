@@ -10,7 +10,7 @@ use crate::{
     collision::ColliderBundle,
     units::Health,
     weapons::{content::WeaponsBlueprint, Bow, Sword},
-    Kingdom, KingdomHandle, PX_PER_METER,
+    AppState, Kingdom, KingdomHandle, PX_PER_METER,
 };
 
 use self::{
@@ -31,6 +31,7 @@ impl Plugin for SubjectPlugin {
         app.add_plugin(SubjectStatePlugin)
             .init_resource::<SubjectAssets>()
             .add_event::<SpawnEvent>()
+            .add_system_set(SystemSet::on_exit(AppState::Game).with_system(despawn_subjects))
             .add_system(spawn_subjects.label(SpawnSubjects))
             .add_system(set_subject_velocities.after(UpdateSubjectState))
             .add_system(despawn_dead_subjects.after(DamageSubjects));
@@ -153,6 +154,12 @@ fn spawn_subjects(
         };
 
         root_commands.push_children(&[sprite_entity]);
+    }
+}
+
+fn despawn_subjects(query: Query<Entity, With<Subject>>, mut commands: Commands) {
+    for entity in &query {
+        commands.entity(entity).despawn_recursive();
     }
 }
 
