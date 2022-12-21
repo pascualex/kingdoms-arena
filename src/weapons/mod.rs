@@ -69,6 +69,7 @@ pub struct Sword;
 
 #[derive(Component)]
 pub struct Bow {
+    pub damage: u32,
     pub range: f32,
     pub spread: f32,
     pub speed: f32,
@@ -76,10 +77,11 @@ pub struct Bow {
 }
 
 impl Bow {
-    pub fn new(range: f32, spread: f32, speed: f32, recharge_seconds: f32) -> Self {
+    pub fn new(damage: u32, range: f32, spread: f32, speed: f32, recharge_seconds: f32) -> Self {
         let mut timer = Timer::from_seconds(recharge_seconds, TimerMode::Once);
         timer.set_elapsed(timer.duration());
         Self {
+            damage,
             range,
             spread,
             speed,
@@ -89,7 +91,15 @@ impl Bow {
 }
 
 #[derive(Component)]
-pub struct Arrow;
+struct Arrow {
+    damage: u32,
+}
+
+impl Arrow {
+    pub fn new(damage: u32) -> Self {
+        Self { damage }
+    }
+}
 
 #[derive(Component)]
 pub struct Lifetime {
@@ -174,7 +184,14 @@ fn shoot_bows(
         let velocity_y = diff.y / flight_time + GRAVITY_ACCELERATION * flight_time / 2.0;
         let velocity = Vec2::new(velocity_x, velocity_y);
 
-        spawn_arrow(position, velocity, *kingdom, &assets, &mut commands);
+        spawn_arrow(
+            position,
+            velocity,
+            *kingdom,
+            bow.damage,
+            &assets,
+            &mut commands,
+        );
 
         let sound = assets.bow_shot_sound.clone();
         audio.play(sound).with_volume(0.5);
@@ -197,7 +214,7 @@ fn rotate_arrows(mut query: Query<(&mut Transform, &Velocity), With<Arrow>>) {
 }
 
 fn collide_arrows(
-    mut arrow_query: Query<(Entity, &mut Transform, &mut Velocity, &Kingdom), With<Arrow>>,
+    mut arrow_query: Query<(Entity, &mut Transform, &mut Velocity, &Kingdom, &Arrow)>,
     mut subject_query: Query<(&Kingdom, &mut Health), With<Subject>>,
     context: Res<RapierContext>,
     weapon_assets: Res<WeaponAssets>,
@@ -205,7 +222,7 @@ fn collide_arrows(
     audio: Res<Audio>,
     mut commands: Commands,
 ) {
-    for (arrow_entity, mut transform, mut velocity, arrow_kingdom) in &mut arrow_query {
+    for (arrow_entity, mut transform, mut velocity, arrow_kingdom, arrow) in &mut arrow_query {
         if transform.translation.y <= -MAX_ARROW_DEPTH {
             transform.translation.y = -MAX_ARROW_DEPTH;
             velocity.linvel = Vec2::ZERO;
@@ -224,7 +241,7 @@ fn collide_arrows(
             };
 
             if !health.is_dead() && subject_kingdom != arrow_kingdom {
-                health.damage(1);
+                health.damage(arrow.damage);
                 commands.entity(arrow_entity).despawn_recursive();
 
                 let sound = subject_assets.death_sound.get(*subject_kingdom);
@@ -253,6 +270,7 @@ fn spawn_arrow(
     position: Vec3,
     velocity: Vec2,
     kingdom: Kingdom,
+    damage: u32,
     assets: &WeaponAssets,
     commands: &mut Commands,
 ) {
@@ -264,7 +282,7 @@ fn spawn_arrow(
         Velocity::linear(velocity),
         Lifetime::new(20.0),
         kingdom,
-        Arrow,
+        Arrow::new(damage),
     );
     let sprite = SpriteBundle {
         texture: assets.arrow_sprite.clone(),
