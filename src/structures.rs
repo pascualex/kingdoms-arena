@@ -4,7 +4,7 @@ use bevy_rapier2d::prelude::*;
 
 use crate::{
     collision::ColliderBundle,
-    subjects::{content::SubjectBlueprint, SpawnEvent},
+    subjects::{content::SubjectBlueprint, SpawnEvent, SpawnSubjects},
     units::Health,
     AppState, Kingdom, KingdomHandle, WORLD_EXTENSION,
 };
@@ -18,7 +18,7 @@ impl Plugin for StructurePlugin {
             .add_system_set(SystemSet::on_enter(AppState::Game).with_system(spawn_nexuses))
             .add_system_set(SystemSet::on_exit(AppState::Game).with_system(despawn_nexuses))
             .add_system(spawn_subjects_at_nexuses)
-            .add_system(finish_game_on_destroyed_nexus);
+            .add_system(finish_game_on_destroyed_nexus.before(SpawnSubjects));
     }
 }
 
