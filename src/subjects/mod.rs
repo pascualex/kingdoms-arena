@@ -9,7 +9,7 @@ use crate::{
     animation::{Animation, AnimationMode, AnimationPlayer},
     collision::ColliderBundle,
     units::Health,
-    weapons::{content::WeaponsBlueprint, Bow, Sword},
+    weapons::{content::WeaponKind, Bow, Sword},
     AppState, Kingdom, KingdomHandle, PX_PER_METER,
 };
 
@@ -142,14 +142,14 @@ fn spawn_subjects(
             MovingState,
         ));
 
-        match event.blueprint.weapon {
-            WeaponsBlueprint::Sword => root_commands.insert(Sword),
-            WeaponsBlueprint::Bow(b) => root_commands.insert(Bow::new(
-                b.damage,
-                b.range,
-                b.spread,
-                b.speed,
-                b.recharge_seconds,
+        match &event.blueprint.weapon.kind {
+            WeaponKind::Sword => root_commands.insert(Sword::new(event.blueprint.weapon.damage)),
+            WeaponKind::Bow(k) => root_commands.insert(Bow::new(
+                event.blueprint.weapon.damage,
+                k.range,
+                k.spread,
+                k.speed,
+                k.recharge_seconds,
             )),
         };
 

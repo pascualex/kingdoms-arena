@@ -3,7 +3,9 @@ use bevy::prelude::*;
 use crate::{
     animation::Animation,
     subjects::SubjectAnimations,
-    weapons::content::{WeaponsBlueprint, ELVEN_BOW, ELVEN_FAST_BOW, ELVEN_SNIPER_BOW},
+    weapons::content::{
+        WeaponBlueprint, ELVEN_BOW, ELVEN_FAST_BOW, ELVEN_SNIPER_BOW, GOBLIN_SWORD,
+    },
 };
 
 pub struct SubjectBlueprint {
@@ -11,7 +13,7 @@ pub struct SubjectBlueprint {
     pub size: Vec2,
     pub health: u32,
     pub speed: f32,
-    pub weapon: WeaponsBlueprint,
+    pub weapon: &'static WeaponBlueprint,
     pub animations: SubjectAnimations,
 }
 
@@ -20,7 +22,7 @@ pub const ELVEN_ARCHER: SubjectBlueprint = SubjectBlueprint {
     size: Vec2::new(1.0, 1.625),
     health: 1,
     speed: 1.5,
-    weapon: WeaponsBlueprint::Bow(&ELVEN_BOW),
+    weapon: &ELVEN_BOW,
     animations: SubjectAnimations {
         idle: Animation::new(0, 2, 0.6),
         moving: Animation::new(7, 4, 0.3),
@@ -33,7 +35,7 @@ pub const ELVEN_FAST_ARCHER: SubjectBlueprint = SubjectBlueprint {
     size: Vec2::new(1.0, 1.625),
     health: 1,
     speed: 3.5,
-    weapon: WeaponsBlueprint::Bow(&ELVEN_FAST_BOW),
+    weapon: &ELVEN_FAST_BOW,
     animations: SubjectAnimations {
         idle: Animation::new(0, 2, 0.3),
         moving: Animation::new(7, 4, 0.2),
@@ -46,7 +48,7 @@ pub const ELVEN_SNIPER_ARCHER: SubjectBlueprint = SubjectBlueprint {
     size: Vec2::new(1.0, 1.625),
     health: 1,
     speed: 1.0,
-    weapon: WeaponsBlueprint::Bow(&ELVEN_SNIPER_BOW),
+    weapon: &ELVEN_SNIPER_BOW,
     animations: SubjectAnimations {
         idle: Animation::new(0, 2, 0.6),
         moving: Animation::new(7, 4, 0.45),
@@ -59,7 +61,7 @@ pub const GOBLIN_WARRIOR: SubjectBlueprint = SubjectBlueprint {
     size: Vec2::new(1.0, 1.375),
     health: 2,
     speed: 2.5,
-    weapon: WeaponsBlueprint::Sword,
+    weapon: &GOBLIN_SWORD,
     animations: SubjectAnimations {
         idle: Animation::new(0, 2, 0.6),
         moving: Animation::new(7, 4, 0.2),

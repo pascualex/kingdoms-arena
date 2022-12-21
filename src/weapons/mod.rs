@@ -64,7 +64,15 @@ impl ShotEvent {
 }
 
 #[derive(Component)]
-pub struct Sword;
+pub struct Sword {
+    damage: u32,
+}
+
+impl Sword {
+    pub fn new(damage: u32) -> Self {
+        Self { damage }
+    }
+}
 
 #[derive(Component)]
 pub struct Bow {
@@ -118,18 +126,18 @@ impl Lifetime {
 }
 
 fn swing_swords(
-    sword_query: Query<(Entity, &Kingdom), With<Sword>>,
+    sword_query: Query<(Entity, &Kingdom, &Sword)>,
     mut health_query: Query<(&Kingdom, &mut Health)>,
     context: Res<RapierContext>,
 ) {
-    for (sword_entity, sword_kingdom) in &sword_query {
+    for (sword_entity, sword_kingdom, sword) in &sword_query {
         for health_entity in intersections_with(sword_entity, &context) {
             let Ok((health_kingdom, mut health)) = health_query.get_mut(health_entity) else {
                 continue;
             };
 
             if health_kingdom != sword_kingdom {
-                health.damage(1);
+                health.damage(sword.damage);
             }
         }
     }
