@@ -6,10 +6,8 @@ use bevy_rapier2d::prelude::*;
 
 use crate::{
     collision::{intersections_with, ColliderBundle},
-    subjects::{
-        despawn_dead_subjects, state::UpdateSubjectState, Frontlines, Health, Subject,
-        SubjectAssets,
-    },
+    subjects::{state::UpdateSubjectState, DamageSubjects, Subject},
+    units::{Frontlines, Health},
     Kingdom, GRAVITY_ACCELERATION, PX_PER_METER,
 };
 
@@ -21,16 +19,16 @@ impl Plugin for WeaponPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<WeaponAssets>()
             .add_event::<ShotEvent>()
-            .add_system(swing_subject_swords.before(despawn_dead_subjects))
+            .add_system(swing_subject_swords.label(DamageSubjects))
             .add_system(tick_bows)
             .add_system(shoot_bows.after(tick_bows).after(UpdateSubjectState))
             .add_system(accelerate_arrows.after(shoot_bows))
             .add_system(rotate_arrows.after(accelerate_arrows))
             .add_system(
                 collide_arrows
+                    .label(DamageSubjects)
                     .after(accelerate_arrows)
-                    .after(swing_subject_swords)
-                    .before(despawn_dead_subjects),
+                    .after(swing_subject_swords),
             )
             .add_system(despawn_lifetimes.after(shoot_bows));
     }
@@ -118,8 +116,6 @@ fn swing_subject_swords(
     sword_query: Query<(Entity, &Kingdom), (With<Subject>, With<Sword>)>,
     mut health_query: Query<(&Kingdom, &mut Health), With<Subject>>,
     context: Res<RapierContext>,
-    assets: Res<SubjectAssets>,
-    audio: Res<Audio>,
 ) {
     for (sword_entity, sword_kingdom) in &sword_query {
         for health_entity in intersections_with(sword_entity, &context) {
@@ -129,8 +125,6 @@ fn swing_subject_swords(
 
             if health_kingdom != sword_kingdom {
                 health.damage(1);
-                let sound = assets.death_sound.get(*health_kingdom);
-                audio.play(sound).with_volume(0.2);
             }
         }
     }
@@ -215,10 +209,9 @@ fn rotate_arrows(mut query: Query<(&mut Transform, &Velocity), With<Arrow>>) {
 
 fn collide_arrows(
     mut arrow_query: Query<(Entity, &mut Transform, &mut Velocity, &Kingdom, &Arrow)>,
-    mut subject_query: Query<(&Kingdom, &mut Health), With<Subject>>,
+    mut health_query: Query<(&Kingdom, &mut Health)>,
     context: Res<RapierContext>,
     weapon_assets: Res<WeaponAssets>,
-    subject_assets: Res<SubjectAssets>,
     audio: Res<Audio>,
     mut commands: Commands,
 ) {
@@ -235,18 +228,14 @@ fn collide_arrows(
             continue;
         }
 
-        for subject_entity in intersections_with(arrow_entity, &context) {
-            let Ok((subject_kingdom, mut health)) = subject_query.get_mut(subject_entity) else {
+        for health_entity in intersections_with(arrow_entity, &context) {
+            let Ok((health_kingdom, mut health)) = health_query.get_mut(health_entity) else {
                 continue;
             };
 
-            if !health.is_dead() && subject_kingdom != arrow_kingdom {
+            if !health.is_dead() && health_kingdom != arrow_kingdom {
                 health.damage(arrow.damage);
                 commands.entity(arrow_entity).despawn_recursive();
-
-                let sound = subject_assets.death_sound.get(*subject_kingdom);
-                audio.play(sound).with_volume(0.2);
-
                 break;
             }
         }

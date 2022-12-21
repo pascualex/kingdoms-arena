@@ -1,10 +1,11 @@
-use bevy::{prelude::*, sprite::Anchor};
+use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use crate::{
     collision::{intersections_with, ColliderBundle},
-    subjects::{content::SubjectBlueprint, spawn_subjects, Health, SpawnEvent, Subject},
+    subjects::{content::SubjectBlueprint, SpawnEvent, SpawnSubjects, Subject},
+    units::Health,
     Kingdom, KingdomHandle, SKY_HEIGHT, WORLD_EXTENSION,
 };
 
@@ -16,7 +17,7 @@ impl Plugin for StructurePlugin {
             .add_event::<NexusSpawnEvent>()
             .add_startup_system(setup)
             .add_system(nexus_spawn_subjects)
-            .add_system(check_traps.after(spawn_subjects));
+            .add_system(check_traps.after(SpawnSubjects));
     }
 }
 
@@ -27,14 +28,16 @@ fn setup(mut commands: Commands) {
         SpriteBundle {
             sprite: Sprite {
                 color: Color::rgba(0.2, 0.1, 0.1, 0.5),
-                custom_size: Some(Vec2::new(1.3, 1.9)),
-                anchor: Anchor::BottomCenter,
+                custom_size: Some(Vec2::new(2.0, 3.0)),
                 ..default()
             },
-            transform: Transform::from_xyz(-WORLD_EXTENSION + 5.0, 0.0, 0.0),
+            transform: Transform::from_xyz(-WORLD_EXTENSION + 5.0, 1.5, 0.0),
             ..default()
         },
+        RigidBody::Fixed,
+        ColliderBundle::new(Collider::cuboid(1.0, 1.5)),
         Kingdom::Elven,
+        Health::new(50),
         Nexus,
     ));
     commands.spawn((
@@ -42,14 +45,16 @@ fn setup(mut commands: Commands) {
         SpriteBundle {
             sprite: Sprite {
                 color: Color::rgba(0.2, 0.1, 0.1, 0.5),
-                custom_size: Some(Vec2::new(1.2, 1.5)),
-                anchor: Anchor::BottomCenter,
+                custom_size: Some(Vec2::new(2.0, 3.0)),
                 ..default()
             },
-            transform: Transform::from_xyz(WORLD_EXTENSION - 5.0, 0.0, 0.0),
+            transform: Transform::from_xyz(WORLD_EXTENSION - 5.0, 1.5, 0.0),
             ..default()
         },
+        RigidBody::Fixed,
+        ColliderBundle::new(Collider::cuboid(1.0, 1.5)),
         Kingdom::Monster,
+        Health::new(50),
         Nexus,
     ));
     // traps
@@ -134,8 +139,11 @@ fn nexus_spawn_subjects(
                 continue;
             }
 
+            let mut position = transform.translation;
+            position.y = 0.0;
+
             let blueprint = nexus_spawn_event.blueprint;
-            let event = SpawnEvent::new(blueprint, transform.translation, *kingdom);
+            let event = SpawnEvent::new(blueprint, position, *kingdom);
             spawn_events.send(event);
 
             let sound = structure_assets.spawn_sound.get(*kingdom);
