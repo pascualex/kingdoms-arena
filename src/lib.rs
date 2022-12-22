@@ -42,7 +42,8 @@ impl Plugin for AppPlugin {
             .add_plugin(WeaponPlugin)
             .add_state(AppState::Menu)
             .init_resource::<Coins>()
-            .add_startup_system(setup);
+            .add_startup_system(setup)
+            .add_system(generate_coins);
     }
 }
 
@@ -54,7 +55,13 @@ enum AppState {
 
 #[derive(Resource, Default)]
 struct Coins {
-    elven: u32,
+    elven: f32,
+}
+
+impl Coins {
+    pub fn elven(&self) -> u32 {
+        self.elven as u32
+    }
 }
 
 #[derive(Component, PartialEq, Eq, Clone, Copy)]
@@ -104,4 +111,8 @@ fn setup(mut commands: Commands) {
             ..default()
         },
     ));
+}
+
+fn generate_coins(mut coins: ResMut<Coins>, time: Res<Time>) {
+    coins.elven += time.delta_seconds();
 }
