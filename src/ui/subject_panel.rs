@@ -2,8 +2,8 @@ use bevy::prelude::*;
 
 use crate::{
     palette,
-    structures::NexusSpawnEvent,
-    subjects::content::{SubjectBlueprint, ELVEN_ARCHER, ELVEN_FAST_ARCHER, ELVEN_SNIPER_ARCHER},
+    structure::NexusSpawnEvent,
+    subject::content::{SubjectBlueprint, ELVEN_ARCHER, ELVEN_FAST_ARCHER, ELVEN_SNIPER_ARCHER},
     AppState, Kingdom,
 };
 

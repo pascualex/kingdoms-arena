@@ -8,8 +8,8 @@ use bevy_rapier2d::prelude::*;
 use crate::{
     animation::{Animation, AnimationMode, AnimationPlayer},
     collision::ColliderBundle,
-    units::Health,
-    weapons::{content::WeaponKind, Bow, Sword},
+    unit::Health,
+    weapon::{content::WeaponKind, Bow, Sword},
     AppState, Kingdom, KingdomHandle, PX_PER_METER,
 };
 

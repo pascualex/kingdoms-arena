@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{palette, ui::UiAssets, AppState, Coins};
+use crate::{coin::Coins, palette, ui::UiAssets, AppState};
 
 pub struct CoinPanelPlugin;
 

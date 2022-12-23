@@ -2,9 +2,9 @@ use bevy::prelude::*;
 
 use crate::{
     animation::{AnimationMode, AnimationPlayer},
-    subjects::{Subject, SubjectAnimations},
-    units::Frontlines,
-    weapons::{Bow, ShotEvent},
+    subject::{Subject, SubjectAnimations},
+    unit::Frontlines,
+    weapon::{Bow, ShotEvent},
     Kingdom,
 };
 

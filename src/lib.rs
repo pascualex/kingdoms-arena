@@ -2,13 +2,14 @@
 
 mod ai;
 mod animation;
+mod coin;
 mod collision;
 mod palette;
-mod structures;
-mod subjects;
+mod structure;
+mod subject;
 mod ui;
-mod units;
-mod weapons;
+mod unit;
+mod weapon;
 
 use bevy::{
     asset::Asset, core_pipeline::clear_color::ClearColorConfig, prelude::*,
@@ -16,8 +17,8 @@ use bevy::{
 };
 
 use self::{
-    ai::AiPlugin, animation::AnimationPlugin, structures::StructurePlugin, subjects::SubjectPlugin,
-    ui::UiPlugin, units::UnitPlugin, weapons::WeaponPlugin,
+    ai::AiPlugin, animation::AnimationPlugin, coin::CoinPlugin, structure::StructurePlugin,
+    subject::SubjectPlugin, ui::UiPlugin, unit::UnitPlugin, weapon::WeaponPlugin,
 };
 
 // perfect pixel art: 360.0 / 22.5 = 16.0
@@ -35,15 +36,14 @@ impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(AiPlugin)
             .add_plugin(AnimationPlugin)
+            .add_plugin(CoinPlugin)
             .add_plugin(StructurePlugin)
             .add_plugin(SubjectPlugin)
             .add_plugin(UiPlugin)
             .add_plugin(UnitPlugin)
             .add_plugin(WeaponPlugin)
             .add_state(AppState::Menu)
-            .init_resource::<Coins>()
-            .add_startup_system(setup)
-            .add_system(generate_coins);
+            .add_startup_system(setup);
     }
 }
 
@@ -51,17 +51,6 @@ impl Plugin for AppPlugin {
 enum AppState {
     Menu,
     Game,
-}
-
-#[derive(Resource, Default)]
-struct Coins {
-    elven: f32,
-}
-
-impl Coins {
-    pub fn elven(&self) -> u32 {
-        self.elven as u32
-    }
 }
 
 #[derive(Component, PartialEq, Eq, Clone, Copy)]
@@ -111,8 +100,4 @@ fn setup(mut commands: Commands) {
             ..default()
         },
     ));
-}
-
-fn generate_coins(mut coins: ResMut<Coins>, time: Res<Time>) {
-    coins.elven += time.delta_seconds();
 }

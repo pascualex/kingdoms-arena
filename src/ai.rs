@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use bevy::{prelude::*, time::Stopwatch};
 
-use crate::{structures::NexusSpawnEvent, subjects::content::GOBLIN_WARRIOR, Kingdom};
+use crate::{structure::NexusSpawnEvent, subject::content::GOBLIN_WARRIOR, Kingdom};
 
 pub struct AiPlugin;
 
