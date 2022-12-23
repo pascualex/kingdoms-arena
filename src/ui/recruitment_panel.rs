@@ -2,23 +2,23 @@ use bevy::prelude::*;
 
 use crate::{
     palette,
-    structure::NexusSpawnEvent,
+    recruitment::RecruitmentEvent,
     subject::content::{SubjectBlueprint, ELVEN_ARCHER, ELVEN_FAST_ARCHER, ELVEN_SNIPER_ARCHER},
     AppState, Kingdom,
 };
 
-pub struct SubjectPanelPlugin;
+pub struct RecruitmentPanelPlugin;
 
-impl Plugin for SubjectPanelPlugin {
+impl Plugin for RecruitmentPanelPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_enter(AppState::Game).with_system(spawn_subject_panel))
-            .add_system_set(SystemSet::on_exit(AppState::Game).with_system(despawn_subject_panel))
-            .add_system(spawn_subject_on_click);
+        app.add_system_set(SystemSet::on_enter(AppState::Game).with_system(spawn))
+            .add_system_set(SystemSet::on_exit(AppState::Game).with_system(despawn))
+            .add_system(recruit_on_click);
     }
 }
 
 #[derive(Component)]
-struct SubjectPanel;
+struct RecruitmentPanel;
 
 #[derive(Component)]
 struct SubjectButton {
@@ -31,7 +31,7 @@ impl SubjectButton {
     }
 }
 
-fn spawn_subject_panel(mut commands: Commands) {
+fn spawn(mut commands: Commands) {
     let root = (
         NodeBundle {
             style: Style {
@@ -50,7 +50,7 @@ fn spawn_subject_panel(mut commands: Commands) {
             },
             ..default()
         },
-        SubjectPanel,
+        RecruitmentPanel,
     );
     let button_1 = (
         ButtonBundle {
@@ -97,19 +97,18 @@ fn spawn_subject_panel(mut commands: Commands) {
     });
 }
 
-fn despawn_subject_panel(query: Query<Entity, With<SubjectPanel>>, mut commands: Commands) {
+fn despawn(query: Query<Entity, With<RecruitmentPanel>>, mut commands: Commands) {
     let entity = query.single();
     commands.entity(entity).despawn_recursive();
 }
 
-fn spawn_subject_on_click(
+fn recruit_on_click(
     query: Query<(&Interaction, &SubjectButton), Changed<Interaction>>,
-    mut events: EventWriter<NexusSpawnEvent>,
+    mut events: EventWriter<RecruitmentEvent>,
 ) {
     for (interaction, spawn) in &query {
         if matches!(interaction, Interaction::Clicked) {
-            let event = NexusSpawnEvent::new(spawn.blueprint, Kingdom::Elven);
-            events.send(event);
+            events.send(RecruitmentEvent::new(spawn.blueprint, Kingdom::Elven));
         }
     }
 }

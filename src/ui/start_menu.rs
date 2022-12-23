@@ -6,8 +6,8 @@ pub struct StartMenuPlugin;
 
 impl Plugin for StartMenuPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_enter(AppState::Menu).with_system(spawn_start_menu))
-            .add_system_set(SystemSet::on_exit(AppState::Menu).with_system(despawn_start_menu))
+        app.add_system_set(SystemSet::on_enter(AppState::Menu).with_system(spawn))
+            .add_system_set(SystemSet::on_exit(AppState::Menu).with_system(despawn))
             .add_system(start_game_on_click);
     }
 }
@@ -18,7 +18,7 @@ struct StartMenu;
 #[derive(Component)]
 struct StartGameButton;
 
-fn spawn_start_menu(mut commands: Commands) {
+fn spawn(mut commands: Commands) {
     let root = (
         NodeBundle {
             style: Style {
@@ -38,7 +38,7 @@ fn spawn_start_menu(mut commands: Commands) {
         },
         StartMenu,
     );
-    let start_game_button = (
+    let button = (
         ButtonBundle {
             style: Style {
                 size: Size::new(Val::Px(80.0), Val::Px(80.0)),
@@ -50,11 +50,11 @@ fn spawn_start_menu(mut commands: Commands) {
         StartGameButton,
     );
     commands.spawn(root).with_children(|builder| {
-        builder.spawn(start_game_button);
+        builder.spawn(button);
     });
 }
 
-fn despawn_start_menu(query: Query<Entity, With<StartMenu>>, mut commands: Commands) {
+fn despawn(query: Query<Entity, With<StartMenu>>, mut commands: Commands) {
     let entity = query.single();
     commands.entity(entity).despawn_recursive();
 }

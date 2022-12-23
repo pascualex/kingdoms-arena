@@ -43,7 +43,6 @@ fn tick_ai_player(
         let random_offset = 0.5 + fastrand::f32();
         ai_player.next_interval = ai_player.average_interval.mul_f32(random_offset);
 
-        let event = NexusSpawnEvent::new(&GOBLIN_WARRIOR, Kingdom::Monster);
-        events.send(event);
+        events.send(NexusSpawnEvent::new(&GOBLIN_WARRIOR, Kingdom::Monster));
     }
 }
