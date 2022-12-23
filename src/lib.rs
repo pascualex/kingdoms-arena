@@ -60,6 +60,15 @@ pub enum Kingdom {
     Monster,
 }
 
+impl Kingdom {
+    pub fn rival(&self) -> Kingdom {
+        match self {
+            Kingdom::Elven => Kingdom::Monster,
+            Kingdom::Monster => Kingdom::Elven,
+        }
+    }
+}
+
 pub struct KingdomHandle<T: Asset> {
     pub elven: Handle<T>,
     pub monster: Handle<T>,

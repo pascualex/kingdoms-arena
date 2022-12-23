@@ -8,6 +8,7 @@ use bevy_rapier2d::prelude::*;
 use crate::{
     animation::{Animation, AnimationMode, AnimationPlayer},
     collision::ColliderBundle,
+    recruitment::Coins,
     unit::Health,
     weapon::{content::WeaponKind, Bow, Sword},
     AppState, Kingdom, KingdomHandle, PX_PER_METER,
@@ -90,8 +91,11 @@ impl SpawnEvent {
 #[derive(Component)]
 pub struct Subject;
 
-#[derive(Component, Deref, DerefMut)]
+#[derive(Component, Deref)]
 pub struct Speed(pub f32);
+
+#[derive(Component, Deref)]
+pub struct Reward(pub f32);
 
 #[derive(Component, Clone)]
 pub struct SubjectAnimations {
@@ -141,6 +145,7 @@ fn spawn_on_spawn_event(
             Subject,
             Health::new(event.blueprint.health),
             Speed(event.blueprint.speed),
+            Reward(event.blueprint.value as f32 / 4.0),
             event.blueprint.animations.clone(),
             MovingState,
         ));
@@ -167,14 +172,18 @@ fn despawn_subjects(query: Query<Entity, With<Subject>>, mut commands: Commands)
 }
 
 fn despawn_dead_subjects(
-    query: Query<(Entity, &Kingdom, &Health), With<Subject>>,
+    query: Query<(Entity, &Kingdom, &Health, &Reward), With<Subject>>,
+    mut coins: ResMut<Coins>,
     subject_assets: Res<SubjectAssets>,
     audio: Res<Audio>,
     mut commands: Commands,
 ) {
-    for (entity, kingdom, health) in &query {
+    for (entity, kingdom, health, reward) in &query {
         if health.is_dead() {
             commands.entity(entity).despawn_recursive();
+
+            let rival_kingdom_coins = coins.get(kingdom.rival());
+            coins.set(rival_kingdom_coins + **reward, kingdom.rival());
 
             let sound = subject_assets.death_sound.get(*kingdom);
             audio.play(sound).with_volume(0.2);
