@@ -51,10 +51,12 @@ impl RecruitmentEvent {
 
 fn generate_coins(mut coins: ResMut<Coins>, time: Res<Time>) {
     coins.elven += COINS_PER_SECOND * time.delta_seconds();
+    coins.monster += COINS_PER_SECOND * time.delta_seconds();
 }
 
 fn reset_coins(mut coins: ResMut<Coins>) {
     coins.elven = 0.0;
+    coins.monster = 0.0;
 }
 
 fn nexus_spawn_on_recruitment_event(

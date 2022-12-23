@@ -1,48 +1,39 @@
-use std::time::Duration;
+use bevy::prelude::*;
 
-use bevy::{prelude::*, time::Stopwatch};
-
-use crate::{structure::NexusSpawnEvent, subject::content::GOBLIN_WARRIOR, Kingdom};
+use crate::{
+    recruitment::{Coins, RecruitmentEvent},
+    subject::content::{SubjectBlueprint, GOBLIN_WARRIOR},
+    Kingdom,
+};
 
 pub struct AiPlugin;
 
 impl Plugin for AiPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(AiPlayer::new(0.5))
-            .add_system(tick_ai_player);
+        app.insert_resource(AiState::new(&GOBLIN_WARRIOR))
+            .add_system(recruit_if_affordable);
     }
 }
 
 #[derive(Resource)]
-struct AiPlayer {
-    stopwatch: Stopwatch,
-    average_interval: Duration,
-    next_interval: Duration,
+struct AiState {
+    blueprint: &'static SubjectBlueprint,
 }
 
-impl AiPlayer {
-    fn new(interval_seconds: f32) -> Self {
-        Self {
-            stopwatch: Stopwatch::new(),
-            average_interval: Duration::from_secs_f32(interval_seconds),
-            next_interval: Duration::ZERO,
-        }
+impl AiState {
+    fn new(blueprint: &'static SubjectBlueprint) -> Self {
+        Self { blueprint }
     }
 }
 
-fn tick_ai_player(
-    mut ai_player: ResMut<AiPlayer>,
-    mut events: EventWriter<NexusSpawnEvent>,
-    time: Res<Time>,
+fn recruit_if_affordable(
+    state: Res<AiState>,
+    coins: Res<Coins>,
+    mut events: EventWriter<RecruitmentEvent>,
 ) {
-    ai_player.stopwatch.tick(time.delta());
-    while ai_player.stopwatch.elapsed() >= ai_player.next_interval {
-        let remaining = ai_player.stopwatch.elapsed() - ai_player.next_interval;
-        ai_player.stopwatch.set_elapsed(remaining);
-
-        let random_offset = 0.5 + fastrand::f32();
-        ai_player.next_interval = ai_player.average_interval.mul_f32(random_offset);
-
-        events.send(NexusSpawnEvent::new(&GOBLIN_WARRIOR, Kingdom::Monster));
+    let mut kingdom_coins = coins.get(Kingdom::Monster);
+    while kingdom_coins >= state.blueprint.value {
+        events.send(RecruitmentEvent::new(state.blueprint, Kingdom::Monster));
+        kingdom_coins -= state.blueprint.value;
     }
 }
