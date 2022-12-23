@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{ecs::system::EntityCommands, prelude::*};
 
 use crate::{
     palette,
@@ -6,6 +6,8 @@ use crate::{
     subject::content::{SubjectBlueprint, ELVEN_ARCHER, ELVEN_FAST_ARCHER, ELVEN_SNIPER_ARCHER},
     AppState, Kingdom,
 };
+
+use super::UiAssets;
 
 pub struct RecruitmentPanelPlugin;
 
@@ -21,17 +23,17 @@ impl Plugin for RecruitmentPanelPlugin {
 struct RecruitmentPanel;
 
 #[derive(Component)]
-struct SubjectButton {
+struct RecruitmentButton {
     blueprint: &'static SubjectBlueprint,
 }
 
-impl SubjectButton {
-    pub fn new(blueprint: &'static SubjectBlueprint) -> Self {
+impl RecruitmentButton {
+    fn new(blueprint: &'static SubjectBlueprint) -> Self {
         Self { blueprint }
     }
 }
 
-fn spawn(mut commands: Commands) {
+fn spawn(assets: Res<UiAssets>, mut commands: Commands) {
     let root = (
         NodeBundle {
             style: Style {
@@ -52,48 +54,34 @@ fn spawn(mut commands: Commands) {
         },
         RecruitmentPanel,
     );
-    let button_1 = (
-        ButtonBundle {
-            style: Style {
-                size: Size::new(Val::Px(80.0), Val::Px(80.0)),
-                ..default()
-            },
-            background_color: palette::DARK_BLUE.into(),
+    let space = NodeBundle {
+        style: Style {
+            size: Size::new(Val::Px(20.0), Val::Px(20.0)),
             ..default()
         },
-        SubjectButton::new(&ELVEN_ARCHER),
-    );
-    let button_2 = (
-        ButtonBundle {
-            style: Style {
-                size: Size::new(Val::Px(80.0), Val::Px(80.0)),
-                margin: UiRect {
-                    left: Val::Px(20.0),
-                    right: Val::Px(20.0),
-                    ..default()
-                },
-                ..default()
-            },
-            background_color: palette::DARK_YELLOW.into(),
-            ..default()
-        },
-        SubjectButton::new(&ELVEN_FAST_ARCHER),
-    );
-    let button_3 = (
-        ButtonBundle {
-            style: Style {
-                size: Size::new(Val::Px(80.0), Val::Px(80.0)),
-                ..default()
-            },
-            background_color: palette::DARK_ORANGE.into(),
-            ..default()
-        },
-        SubjectButton::new(&ELVEN_SNIPER_ARCHER),
-    );
+        ..default()
+    };
     commands.spawn(root).with_children(|builder| {
-        builder.spawn(button_1);
-        builder.spawn(button_2);
-        builder.spawn(button_3);
+        recruitment_button(
+            builder.spawn_empty(),
+            &ELVEN_ARCHER,
+            palette::DARK_BLUE,
+            &assets,
+        );
+        builder.spawn(space.clone());
+        recruitment_button(
+            builder.spawn_empty(),
+            &ELVEN_FAST_ARCHER,
+            palette::DARK_YELLOW,
+            &assets,
+        );
+        builder.spawn(space.clone());
+        recruitment_button(
+            builder.spawn_empty(),
+            &ELVEN_SNIPER_ARCHER,
+            palette::DARK_ORANGE,
+            &assets,
+        );
     });
 }
 
@@ -103,7 +91,7 @@ fn despawn(query: Query<Entity, With<RecruitmentPanel>>, mut commands: Commands)
 }
 
 fn recruit_on_click(
-    query: Query<(&Interaction, &SubjectButton), Changed<Interaction>>,
+    query: Query<(&Interaction, &RecruitmentButton), Changed<Interaction>>,
     mut events: EventWriter<RecruitmentEvent>,
 ) {
     for (interaction, spawn) in &query {
@@ -111,4 +99,44 @@ fn recruit_on_click(
             events.send(RecruitmentEvent::new(spawn.blueprint, Kingdom::Elven));
         }
     }
+}
+
+fn recruitment_button(
+    mut commands: EntityCommands,
+    blueprint: &'static SubjectBlueprint,
+    color: Color,
+    assets: &UiAssets,
+) {
+    let root = (
+        ButtonBundle {
+            style: Style {
+                size: Size::new(Val::Px(80.0), Val::Px(80.0)),
+                ..default()
+            },
+            background_color: color.into(),
+            ..default()
+        },
+        RecruitmentButton::new(blueprint),
+    );
+    let text = TextBundle {
+        text: Text {
+            sections: vec![TextSection::new(
+                blueprint.value.to_string(),
+                TextStyle {
+                    font: assets.font.clone(),
+                    font_size: 20.0,
+                    color: palette::DARK_BLACK,
+                },
+            )],
+            alignment: TextAlignment::TOP_RIGHT,
+        },
+        style: Style {
+            size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+            ..default()
+        },
+        ..default()
+    };
+    commands.insert(root).with_children(|builder| {
+        builder.spawn(text);
+    });
 }

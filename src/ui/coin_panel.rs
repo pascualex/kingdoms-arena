@@ -56,5 +56,5 @@ fn despawn_coin_panel(query: Query<Entity, With<CoinPanel>>, mut commands: Comma
 
 fn update_coin_text(coins: Res<Coins>, mut query: Query<&mut Text, With<CoinText>>) {
     let mut text = query.single_mut();
-    text.sections[0].value = format!("{}", coins.get(Kingdom::Elven) as u32);
+    text.sections[0].value = (coins.get(Kingdom::Elven) as u32).to_string();
 }
