@@ -6,8 +6,8 @@ use bevy_rapier2d::prelude::*;
 
 use crate::{
     collision::{intersections_with, ColliderBundle},
-    subjects::{state::UpdateSubjectState, DamageSubjects, Subject},
-    units::{Frontlines, Health},
+    subject::{state::UpdateSubjectState, DamageSubjects, Subject},
+    unit::{Frontlines, Health},
     AppState, Kingdom, GRAVITY_ACCELERATION, PX_PER_METER,
 };
 

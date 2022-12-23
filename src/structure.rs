@@ -4,8 +4,8 @@ use bevy_rapier2d::prelude::*;
 
 use crate::{
     collision::ColliderBundle,
-    subjects::{content::SubjectBlueprint, SpawnEvent, SpawnSubjects},
-    units::Health,
+    subject::{content::SubjectBlueprint, SpawnEvent, SpawnSubjects},
+    unit::Health,
     AppState, Kingdom, KingdomHandle, WORLD_EXTENSION,
 };
 

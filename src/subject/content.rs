@@ -2,10 +2,8 @@ use bevy::prelude::*;
 
 use crate::{
     animation::Animation,
-    subjects::SubjectAnimations,
-    weapons::content::{
-        WeaponBlueprint, ELVEN_BOW, ELVEN_FAST_BOW, ELVEN_SNIPER_BOW, GOBLIN_SWORD,
-    },
+    subject::SubjectAnimations,
+    weapon::content::{WeaponBlueprint, ELVEN_BOW, ELVEN_FAST_BOW, ELVEN_SNIPER_BOW, GOBLIN_SWORD},
 };
 
 pub struct SubjectBlueprint {
