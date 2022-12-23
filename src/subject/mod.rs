@@ -34,7 +34,7 @@ impl Plugin for SubjectPlugin {
             .add_system_set(SystemSet::on_exit(AppState::Game).with_system(despawn_subjects))
             .add_system_set(
                 SystemSet::on_update(AppState::Game)
-                    .with_system(spawn_subjects.label(SpawnSubjects))
+                    .with_system(spawn_on_spawn_event.label(SpawnSubjects))
                     .with_system(set_subject_velocities.after(UpdateSubjectState))
                     .with_system(despawn_dead_subjects.after(DamageSubjects)),
             );
@@ -100,7 +100,7 @@ pub struct SubjectAnimations {
     shooting: Animation,
 }
 
-fn spawn_subjects(
+fn spawn_on_spawn_event(
     mut events: EventReader<SpawnEvent>,
     assets: Res<SubjectAssets>,
     mut commands: Commands,

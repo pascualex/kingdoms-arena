@@ -8,6 +8,7 @@ use crate::{
 
 pub struct SubjectBlueprint {
     pub name: &'static str,
+    pub value: u32,
     pub size: Vec2,
     pub health: u32,
     pub speed: f32,
@@ -17,6 +18,7 @@ pub struct SubjectBlueprint {
 
 pub const ELVEN_ARCHER: SubjectBlueprint = SubjectBlueprint {
     name: "Elven archer",
+    value: 4,
     size: Vec2::new(1.0, 1.625),
     health: 1,
     speed: 1.5,
@@ -29,7 +31,8 @@ pub const ELVEN_ARCHER: SubjectBlueprint = SubjectBlueprint {
 };
 
 pub const ELVEN_FAST_ARCHER: SubjectBlueprint = SubjectBlueprint {
-    name: "Fast elven archer",
+    name: "Elven fast archer",
+    value: 8,
     size: Vec2::new(1.0, 1.625),
     health: 1,
     speed: 3.5,
@@ -43,6 +46,7 @@ pub const ELVEN_FAST_ARCHER: SubjectBlueprint = SubjectBlueprint {
 
 pub const ELVEN_SNIPER_ARCHER: SubjectBlueprint = SubjectBlueprint {
     name: "Elven sniper archer",
+    value: 5,
     size: Vec2::new(1.0, 1.625),
     health: 1,
     speed: 1.0,
@@ -56,6 +60,7 @@ pub const ELVEN_SNIPER_ARCHER: SubjectBlueprint = SubjectBlueprint {
 
 pub const GOBLIN_WARRIOR: SubjectBlueprint = SubjectBlueprint {
     name: "Goblin warrior",
+    value: 1,
     size: Vec2::new(1.0, 1.375),
     health: 2,
     speed: 2.5,

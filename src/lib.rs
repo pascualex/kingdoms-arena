@@ -2,9 +2,9 @@
 
 mod ai;
 mod animation;
-mod coin;
 mod collision;
 mod palette;
+mod recruitment;
 mod structure;
 mod subject;
 mod ui;
@@ -17,8 +17,9 @@ use bevy::{
 };
 
 use self::{
-    ai::AiPlugin, animation::AnimationPlugin, coin::CoinPlugin, structure::StructurePlugin,
-    subject::SubjectPlugin, ui::UiPlugin, unit::UnitPlugin, weapon::WeaponPlugin,
+    ai::AiPlugin, animation::AnimationPlugin, recruitment::RecruitmentPlugin,
+    structure::StructurePlugin, subject::SubjectPlugin, ui::UiPlugin, unit::UnitPlugin,
+    weapon::WeaponPlugin,
 };
 
 // perfect pixel art: 360.0 / 22.5 = 16.0
@@ -36,7 +37,7 @@ impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(AiPlugin)
             .add_plugin(AnimationPlugin)
-            .add_plugin(CoinPlugin)
+            .add_plugin(RecruitmentPlugin)
             .add_plugin(StructurePlugin)
             .add_plugin(SubjectPlugin)
             .add_plugin(UiPlugin)

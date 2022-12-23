@@ -17,7 +17,7 @@ impl Plugin for StructurePlugin {
             .add_event::<NexusSpawnEvent>()
             .add_system_set(SystemSet::on_enter(AppState::Game).with_system(spawn_nexuses))
             .add_system_set(SystemSet::on_exit(AppState::Game).with_system(despawn_nexuses))
-            .add_system(spawn_subjects_at_nexuses)
+            .add_system(spawn_on_nexus_spawn_event)
             .add_system(finish_game_on_destroyed_nexus.before(SpawnSubjects));
     }
 }
@@ -96,10 +96,10 @@ fn despawn_nexuses(query: Query<Entity, With<Nexus>>, mut commands: Commands) {
     }
 }
 
-fn spawn_subjects_at_nexuses(
-    query: Query<(&Transform, &Kingdom), With<Nexus>>,
+fn spawn_on_nexus_spawn_event(
     mut nexus_spawn_events: EventReader<NexusSpawnEvent>,
     mut spawn_events: EventWriter<SpawnEvent>,
+    query: Query<(&Transform, &Kingdom), With<Nexus>>,
     structure_assets: Res<StructureAssets>,
     audio: Res<Audio>,
 ) {
@@ -112,9 +112,11 @@ fn spawn_subjects_at_nexuses(
             let mut position = transform.translation;
             position.y = 0.0;
 
-            let blueprint = nexus_spawn_event.blueprint;
-            let event = SpawnEvent::new(blueprint, position, *kingdom);
-            spawn_events.send(event);
+            spawn_events.send(SpawnEvent::new(
+                nexus_spawn_event.blueprint,
+                position,
+                *kingdom,
+            ));
 
             let sound = structure_assets.spawn_sound.get(*kingdom);
             audio.play(sound).with_volume(0.1);

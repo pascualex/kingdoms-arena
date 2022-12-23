@@ -1,11 +1,12 @@
 mod coin_panel;
+mod recruitment_panel;
 mod start_menu;
-mod subject_panel;
 
 use bevy::prelude::*;
 
 use self::{
-    coin_panel::CoinPanelPlugin, start_menu::StartMenuPlugin, subject_panel::SubjectPanelPlugin,
+    coin_panel::CoinPanelPlugin, recruitment_panel::RecruitmentPanelPlugin,
+    start_menu::StartMenuPlugin,
 };
 
 pub struct UiPlugin;
@@ -13,8 +14,8 @@ pub struct UiPlugin;
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(CoinPanelPlugin)
+            .add_plugin(RecruitmentPanelPlugin)
             .add_plugin(StartMenuPlugin)
-            .add_plugin(SubjectPanelPlugin)
             .init_resource::<UiAssets>();
     }
 }
