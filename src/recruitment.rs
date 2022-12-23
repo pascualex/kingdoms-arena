@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{structure::NexusSpawnEvent, subject::content::SubjectBlueprint, AppState, Kingdom};
 
-const COINS_PER_SECOND: f32 = 1.0;
+const COINS_PER_SECOND: f32 = 1.5;
 
 pub struct RecruitmentPlugin;
 
@@ -23,17 +23,17 @@ pub struct Coins {
 }
 
 impl Coins {
-    pub fn get(&self, kingdom: Kingdom) -> u32 {
+    pub fn get(&self, kingdom: Kingdom) -> f32 {
         match kingdom {
-            Kingdom::Elven => self.elven as u32,
-            Kingdom::Monster => self.monster as u32,
+            Kingdom::Elven => self.elven,
+            Kingdom::Monster => self.monster,
         }
     }
 
-    pub fn set(&mut self, coins: u32, kingdom: Kingdom) {
+    pub fn set(&mut self, coins: f32, kingdom: Kingdom) {
         match kingdom {
-            Kingdom::Elven => self.elven = coins as f32,
-            Kingdom::Monster => self.monster = coins as f32,
+            Kingdom::Elven => self.elven = coins,
+            Kingdom::Monster => self.monster = coins,
         }
     }
 }
@@ -65,12 +65,12 @@ fn nexus_spawn_on_recruitment_event(
     mut coins: ResMut<Coins>,
 ) {
     for recruitment_event in recruitment_events.iter() {
-        let kingdom_coins = coins.get(recruitment_event.kingdom);
+        let kingdom_coins = coins.get(recruitment_event.kingdom) as u32;
         if recruitment_event.blueprint.value > kingdom_coins {
             continue;
         }
         coins.set(
-            kingdom_coins - recruitment_event.blueprint.value,
+            (kingdom_coins - recruitment_event.blueprint.value) as f32,
             recruitment_event.kingdom,
         );
         nexus_spawn_events.send(NexusSpawnEvent::new(

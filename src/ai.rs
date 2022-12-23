@@ -31,7 +31,7 @@ fn recruit_if_affordable(
     coins: Res<Coins>,
     mut events: EventWriter<RecruitmentEvent>,
 ) {
-    let mut kingdom_coins = coins.get(Kingdom::Monster);
+    let mut kingdom_coins = coins.get(Kingdom::Monster) as u32;
     while kingdom_coins >= state.blueprint.value {
         events.send(RecruitmentEvent::new(state.blueprint, Kingdom::Monster));
         kingdom_coins -= state.blueprint.value;

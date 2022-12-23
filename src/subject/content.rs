@@ -18,7 +18,7 @@ pub struct SubjectBlueprint {
 
 pub const ELVEN_ARCHER: SubjectBlueprint = SubjectBlueprint {
     name: "Elven archer",
-    value: 4,
+    value: 3,
     size: Vec2::new(1.0, 1.625),
     health: 1,
     speed: 1.5,
@@ -32,7 +32,7 @@ pub const ELVEN_ARCHER: SubjectBlueprint = SubjectBlueprint {
 
 pub const ELVEN_FAST_ARCHER: SubjectBlueprint = SubjectBlueprint {
     name: "Elven fast archer",
-    value: 8,
+    value: 10,
     size: Vec2::new(1.0, 1.625),
     health: 1,
     speed: 3.5,
@@ -46,7 +46,7 @@ pub const ELVEN_FAST_ARCHER: SubjectBlueprint = SubjectBlueprint {
 
 pub const ELVEN_SNIPER_ARCHER: SubjectBlueprint = SubjectBlueprint {
     name: "Elven sniper archer",
-    value: 5,
+    value: 3,
     size: Vec2::new(1.0, 1.625),
     health: 1,
     speed: 1.0,
